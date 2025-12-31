@@ -44,7 +44,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
-        origin: process.env.FRONTEND_URL || 'http://localhost:8080',
+        origin: process.env.FRONTEND_URL || 'https://ai-shopping-assistant-frontend.onrender.com',
         methods: ['GET', 'POST']
     }
 });
