@@ -1,0 +1,60 @@
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:latest
+    container_name: shopping-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: shopping_assistant
+    volumes:
+      - mongodb_data:/data/db
+      - ./docker/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - shopping-network
+
+  # Backend Service
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: shopping-backend
+    restart: always
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    environment:
+      NODE_ENV: production
+      MONGODB_URI: mongodb://mongodb:27017/shopping_assistant
+      PORT: 3000
+      SOCKET_PORT: 3001
+    depends_on:
+      - mongodb
+    volumes:
+      - ./backend:/app/backend
+      - /app/node_modules
+    networks:
+      - shopping-network
+
+  # Frontend Service
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: shopping-frontend
+    restart: always
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - shopping-network
+
+networks:
+  shopping-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local
