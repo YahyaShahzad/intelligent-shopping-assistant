@@ -47,10 +47,72 @@ An AI-powered shopping assistant that uses rule-based reasoning to provide perso
 
 ### Prerequisites
 - Node.js (v18+)
-- MongoDB (v6+)
-- Docker & Docker Compose (optional)
+- MongoDB (v6+) OR MongoDB Atlas (cloud)
+- Docker & Docker Compose (for local Docker deployment)
+- GitHub account (for cloud deployment)
+- Render.com account (for cloud deployment - free tier available)
 
-### Installation
+### Option 1: Cloud Deployment ☁️ (Recommended for Production)
+
+**Deploy to the internet - accessible from anywhere!**
+
+1. **30-Minute Deployment** using [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md)
+2. **Step-by-Step Guide** in [CLOUD_DEPLOYMENT.md](CLOUD_DEPLOYMENT.md)
+3. **MongoDB Setup** in [MONGODB_ATLAS_SETUP.md](MONGODB_ATLAS_SETUP.md)
+
+**What you'll get:**
+- Live website accessible worldwide
+- Free hosting on Render.com
+- Free database on MongoDB Atlas
+- Automatic deployments from GitHub
+- HTTPS enabled by default
+
+**Quick Steps:**
+```bash
+# 1. Push code to GitHub
+git init
+git add .
+git commit -m "Initial deployment"
+git remote add origin https://github.com/YOUR-USERNAME/ai-shopping-assistant.git
+git push -u origin main
+
+# 2. Deploy to Render.com (follow guide in CLOUD_DEPLOYMENT.md)
+# 3. Set up MongoDB Atlas (follow MONGODB_ATLAS_SETUP.md)
+# 4. Your app is live! 🎉
+```
+
+### Option 2: Docker Deployment (Local Development)
+
+**Run everything on your computer:**
+
+1. **Start Docker Desktop**
+   - Ensure Docker Desktop is running
+
+2. **Run Deployment Script**
+   ```bash
+   # Windows PowerShell
+   .\deploy.ps1
+   
+   # Linux/Mac
+   chmod +x deploy.sh
+   ./deploy.sh
+   ```
+
+3. **Or use Docker Compose directly**
+   ```bash
+   docker-compose up --build
+   ```
+
+4. **Access Application**
+   - Frontend: http://localhost:8080
+   - Backend API: http://localhost:3000/api
+   - Health Check: http://localhost:3000/health
+
+📖 **See [DOCKER_QUICKSTART.md](DOCKER_QUICKSTART.md) for detailed Docker deployment guide**
+
+### Option 3: Local Development Setup
+
+**Manual setup for development:**
 
 1. **Clone and Install Dependencies**
 ```bash
@@ -87,11 +149,6 @@ npm run client     # Frontend on port 8080
 **Production Mode:**
 ```bash
 npm start
-```
-
-**Docker Mode:**
-```bash
-docker-compose up --build
 ```
 
 ## 📁 Project Structure

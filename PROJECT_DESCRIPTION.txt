@@ -1,0 +1,1052 @@
+================================================================================
+           GPT PROMPTS FOR BUILDING AI SHOPPING ASSISTANT
+================================================================================
+
+This document contains step-by-step prompts to build an AI-powered e-commerce
+shopping assistant using ChatGPT, GitHub Copilot, or other AI assistants.
+
+Use these prompts sequentially to implement each functionality from scratch.
+
+================================================================================
+PHASE 1: PROJECT SETUP & INITIALIZATION
+================================================================================
+
+PROMPT 1: Initial Project Structure
+--------------------------------------------------------------------------------
+"Create a Node.js + Express backend and Vue.js 3 frontend project structure 
+for an e-commerce shopping assistant. Include:
+- Backend: Express server with MongoDB/Mongoose
+- Frontend: Vue 3 with Vuex and Vue Router
+- Docker configuration with docker-compose
+- Environment configuration files
+- Package.json for both frontend and backend
+- Basic folder structure following MVC pattern
+Provide complete file structure and initial configuration files."
+
+PROMPT 2: MongoDB Models Setup
+--------------------------------------------------------------------------------
+"Create MongoDB schemas using Mongoose for an e-commerce application:
+1. User model with: email, password (hashed), name, isStudent, preferences, 
+   browsingHistory, purchaseHistory
+2. Product model with: name, description, price, category, tags, stock, 
+   image, ratings
+3. Order model with: user reference, items array, total, status, 
+   shippingAddress, paymentMethod
+4. Session model for tracking shopping sessions
+5. Rule model for discount rules
+
+Include validation, methods, and proper indexing. Use bcrypt for password 
+hashing."
+
+PROMPT 3: Express Server Configuration
+--------------------------------------------------------------------------------
+"Set up an Express.js server with:
+- CORS configuration
+- Body parser middleware
+- Winston logging
+- Socket.IO integration
+- MongoDB connection with error handling
+- Environment variable configuration using dotenv
+- Error handling middleware
+- Route structure for /api/auth, /api/products, /api/cart, /api/orders
+- Port configuration (default 3000)
+Provide complete server.js file."
+
+PROMPT 4: Vue.js Frontend Setup
+--------------------------------------------------------------------------------
+"Create a Vue 3 application with:
+- Vuex store with modules (auth, cart, products, orders, session, assistant)
+- Vue Router with routes for: Home, Auth, Products, ProductDetails, Cart, 
+  Checkout, Orders, Profile
+- Axios configuration as API service with interceptors
+- Base components: Header, Footer, Notification, Loading
+- SCSS styling setup
+- Environment variable handling
+Provide main.js, router/index.js, store/index.js, and App.vue."
+
+================================================================================
+PHASE 2: AUTHENTICATION & USER MANAGEMENT
+================================================================================
+
+PROMPT 5: JWT Authentication Backend
+--------------------------------------------------------------------------------
+"Implement JWT-based authentication for Express backend:
+1. POST /register endpoint: Create user, hash password with bcrypt, return JWT
+2. POST /login endpoint: Validate credentials, return JWT token
+3. GET /me endpoint: Return current user (requires authentication)
+4. PUT /profile endpoint: Update user profile
+5. Authentication middleware to verify JWT tokens
+6. Password validation (min 6 characters)
+7. Email uniqueness check
+8. JWT expiration handling (7 days)
+Include error handling and input validation with Joi."
+
+PROMPT 6: Frontend Authentication Module
+--------------------------------------------------------------------------------
+"Create Vuex auth module (store/modules/auth.js) with:
+- State: token, user, isAuthenticated
+- Actions: register, login, logout, getCurrentUser, updateProfile
+- Mutations: SET_AUTH, CLEAR_AUTH, UPDATE_USER
+- Store JWT in localStorage
+- Add Authorization header to axios defaults
+- Handle token expiration
+- Redirect to login on 401 errors
+Also create Auth.vue component with login and registration forms."
+
+================================================================================
+PHASE 3: COMPOSITE PATTERN - DISCOUNT SYSTEM
+================================================================================
+
+PROMPT 7: Composite Pattern Implementation
+--------------------------------------------------------------------------------
+"Implement the Composite design pattern for hierarchical discount rules:
+
+1. Create abstract DiscountComponent class with methods:
+   - apply(cart): Calculate discount
+   - getDescription(): Return discount description
+   - isApplicable(cart): Check if discount applies
+
+2. Create Leaf classes:
+   - PercentageDiscount(name, percentage)
+   - FixedAmountDiscount(name, amount)
+   - CategoryDiscount(category, percentage)
+   - BuyXGetYDiscount(productId, x, y)
+
+3. Create Composite class:
+   - CompositeDiscount(name, operator)
+   - addComponent(discount)
+   - removeComponent(discount)
+
+4. Include validation for:
+   - Maximum discount limits
+   - Stacking rules (AND/OR/MAX)
+   - Date ranges
+
+Save in patterns/composite/DiscountComposite.js with full implementation."
+
+PROMPT 8: Discount API Endpoints
+--------------------------------------------------------------------------------
+"Create Express API endpoints for discount management:
+- POST /api/cart/apply-discount: Apply discount to cart
+- GET /api/discounts/available: Get applicable discounts
+- POST /api/discounts/validate: Validate coupon code
+- GET /api/discounts/student: Check student discount eligibility
+
+Integrate with Composite Pattern classes. Calculate final price after applying
+multiple discounts. Return breakdown of applied discounts."
+
+================================================================================
+PHASE 4: STATE PATTERN - SESSION MANAGEMENT
+================================================================================
+
+PROMPT 9: State Pattern Implementation
+--------------------------------------------------------------------------------
+"Implement the State design pattern for shopping session management:
+
+1. Create ShoppingSession context class with:
+   - state: Current state object
+   - setState(state): Change state
+   - addToCart(): Delegate to state
+   - checkout(): Delegate to state
+   - completeOrder(): Delegate to state
+
+2. Create SessionState abstract class with:
+   - onEnter(session): Execute on state entry
+   - onExit(session): Execute on state exit
+   - addToCart(session): Handle cart actions
+   - checkout(session): Handle checkout
+   - Abstract methods for state transitions
+
+3. Create concrete state classes:
+   - BrowsingState: Initial browsing
+   - CartActiveState: Items in cart
+   - CheckoutState: Checkout initiated
+   - PaymentState: Payment in progress
+   - CompletedState: Order completed
+   - AbandonedState: Session abandoned
+
+4. Define valid state transitions:
+   - Browsing → CartActive (addToCart)
+   - CartActive → Checkout (checkout)
+   - Checkout → Payment (confirmOrder)
+   - Payment → Completed (completePayment)
+   - Any → Abandoned (timeout/explicit)
+
+5. Include state-specific actions and validation
+
+Save in patterns/state/SessionState.js"
+
+PROMPT 10: Session Management API
+--------------------------------------------------------------------------------
+"Create session management endpoints using State Pattern:
+- POST /api/session/start: Initialize new session in BrowsingState
+- PUT /api/session/update: Transition to new state
+- GET /api/session/:id: Get current session with state info
+- DELETE /api/session/end: End session
+- GET /api/session/:id/history: Get state transition history
+
+Handle state transitions with validation. Record timestamps for analytics.
+Implement session timeout (30 minutes of inactivity)."
+
+================================================================================
+PHASE 5: VISITOR PATTERN - CART OPERATIONS
+================================================================================
+
+PROMPT 11: Visitor Pattern Implementation
+--------------------------------------------------------------------------------
+"Implement the Visitor design pattern for cart operations:
+
+1. Create CartItem class (Element):
+   - accept(visitor): Accept visitor
+   - getProduct(), getQuantity(), getPrice()
+
+2. Create ShoppingCart class (Aggregate):
+   - accept(visitor): Apply visitor to all items
+   - addItem(), removeItem(), getItems()
+
+3. Create CartVisitor abstract class with:
+   - visitItem(item): Process single item
+   - visitCart(cart): Process entire cart
+   - getResult(): Get calculation result
+
+4. Create concrete visitor classes:
+   - RuleApplicationVisitor: Apply discount rules
+   - TaxCalculationVisitor: Calculate taxes
+   - ShippingCalculationVisitor: Calculate shipping
+   - AnalyticsVisitor: Track cart metrics
+   - ValidationVisitor: Validate stock/prices
+
+5. Each visitor should:
+   - Maintain internal state
+   - Process items independently
+   - Return computed result
+   - Not modify item structure
+
+Save in patterns/visitor/CartVisitor.js"
+
+PROMPT 12: Cart Management API
+--------------------------------------------------------------------------------
+"Create cart management endpoints using Visitor Pattern:
+- GET /api/cart: Get current cart
+- POST /api/cart/add: Add item to cart
+- PUT /api/cart/update/:itemId: Update quantity
+- DELETE /api/cart/remove/:itemId: Remove item
+- DELETE /api/cart/clear: Clear entire cart
+- POST /api/cart/evaluate: Run all visitors for recommendations
+
+Apply visitors in sequence: RuleApplication → Tax → Shipping → Analytics
+Return cart with subtotal, tax, shipping, total, and applied discounts."
+
+================================================================================
+PHASE 6: INTERPRETER PATTERN - RULE ENGINE
+================================================================================
+
+PROMPT 13: Interpreter Pattern Implementation
+--------------------------------------------------------------------------------
+"Implement the Interpreter design pattern for business rule evaluation:
+
+1. Create ShoppingContext class:
+   - Store cart, user, session data
+   - Provide variables for rule evaluation
+
+2. Create RuleExpression abstract class:
+   - interpret(context): Evaluate expression
+
+3. Create Terminal Expression classes:
+   - NumberExpression: Literal numbers
+   - StringExpression: Literal strings
+   - VariableExpression: Context variables
+
+4. Create Non-Terminal Expression classes:
+   - ComparisonExpression: <, >, ==, <=, >=
+   - LogicalExpression: AND, OR, NOT
+   - ArithmeticExpression: +, -, *, /
+   - FunctionExpression: SUM, COUNT, AVG
+
+5. Create RuleParser to convert strings to expression trees:
+   - Parse rule syntax
+   - Build expression tree
+   - Handle operator precedence
+
+Save in patterns/interpreter/RuleInterpreter.js"
+
+PROMPT 14: Rule Evaluation System
+--------------------------------------------------------------------------------
+"Create rule evaluation system using Interpreter Pattern:
+- POST /api/rules/create: Create new business rule
+- POST /api/rules/evaluate: Evaluate rules against cart
+- GET /api/rules/applicable: Get rules applicable to current context
+- PUT /api/rules/:id/activate: Enable/disable rule
+
+Example rules:
+- 'cartTotal > 100' → Free shipping
+- 'categoryCount(Electronics) >= 2' → 10% off electronics
+- 'isStudent == true AND cartTotal > 50' → Extra 5% off
+
+Return which rules applied and their effects."
+
+================================================================================
+PHASE 7: BLACKBOARD ARCHITECTURE
+================================================================================
+
+PROMPT 15: Blackboard Implementation
+--------------------------------------------------------------------------------
+"Implement Blackboard Architecture for collaborative problem-solving:
+
+1. Create Blackboard class (patterns/blackboard/Blackboard.js):
+   - Central shared data store
+   - Methods to read/write data
+   - Observer pattern for notifications
+   - Data categories:
+     * Users
+     * Products
+     * Carts
+     * Sessions
+     * Rules
+     * Recommendations
+
+2. Methods for each data type:
+   - addUser(), getUser(), updateUser()
+   - addProduct(), getProduct(), updateProduct()
+   - addCart(), getCart(), updateCart()
+   - addSession(), getSession(), updateSession()
+   - addRule(), getRule(), updateRule()
+   - addRecommendation(), getRecommendation()
+
+3. Implement observer pattern for notifications
+4. Thread-safe operations (if needed)
+
+This is the central shared knowledge base."
+
+PROMPT 16: Knowledge Sources Implementation
+--------------------------------------------------------------------------------
+"Create independent Knowledge Source agents for Blackboard Architecture:
+
+1. InventoryKnowledgeSource:
+   - Monitors product stock levels
+   - Updates availability information
+   - Warns about low stock
+   - Suggests alternatives
+
+2. PricingKnowledgeSource:
+   - Monitors price changes
+   - Applies dynamic pricing
+   - Suggests bundle discounts
+   - Calculates promotional prices
+
+3. RecommendationKnowledgeSource:
+   - Analyzes user behavior
+   - Generates product recommendations
+   - Collaborative filtering
+   - Content-based recommendations
+
+4. UserBehaviorKnowledgeSource:
+   - Tracks browsing patterns
+   - Identifies shopping intent
+   - Predicts cart abandonment
+   - Suggests interventions
+
+5. RuleEvaluationKnowledgeSource:
+   - Evaluates business rules
+   - Applies applicable rules
+   - Resolves rule conflicts
+   - Tracks rule effectiveness
+
+Each Knowledge Source:
+- Has onBlackboardUpdate(change) method
+- Reads data from Blackboard
+- Processes independently
+- Writes results back to Blackboard
+- Triggers further processing
+
+Save in architecture/knowledgeSources/KnowledgeSources.js"
+
+PROMPT 17: Rule Engine (Control Component)
+--------------------------------------------------------------------------------
+"Create Rule Engine as control component for Blackboard Architecture:
+
+File: architecture/ruleEngine/RuleEngine.js
+
+1. Orchestrates Knowledge Source execution:
+   - Determines which KS should run
+   - Manages execution order
+   - Handles dependencies
+
+2. Conflict resolution:
+   - Resolves conflicting recommendations
+   - Applies priority rules
+   - Aggregates results
+
+3. Scheduling:
+   - Event-driven execution
+   - Priority-based scheduling
+   - Prevents infinite loops
+
+4. Methods:
+   - evaluateKnowledgeSources()
+   - resolveConflicts()
+   - applyResults()
+   - notifyObservers()
+
+5. Integration:
+   - Connects Blackboard with Knowledge Sources
+   - Coordinates data flow
+   - Ensures consistency
+
+The Rule Engine coordinates all the Knowledge Sources."
+
+================================================================================
+PHASE 8: PRODUCT CATALOG & SEARCH
+================================================================================
+
+PROMPT 18: Product Management Backend
+--------------------------------------------------------------------------------
+"Create product management system:
+- GET /api/products: List all products with pagination and filters
+- GET /api/products/:id: Get single product details
+- GET /api/products/category/:category: Filter by category
+- GET /api/products/search: Text search (name, description, tags)
+- POST /api/products: Create product (admin only)
+- PUT /api/products/:id: Update product (admin only)
+- DELETE /api/products/:id: Delete product (admin only)
+
+Features:
+- MongoDB text indexes for search
+- Filter by price range, category, tags
+- Sort by price, name, popularity, rating
+- Stock level validation
+- Image URL validation
+- Pagination (20 items per page)
+
+Initialize 32 sample products across categories: Electronics, Clothing, 
+Books, Home & Garden with realistic data."
+
+PROMPT 19: Product Catalog Frontend
+--------------------------------------------------------------------------------
+"Create Vue.js product catalog with:
+
+1. Products.vue view:
+   - Product grid with images
+   - Filter sidebar (category, price range)
+   - Sort dropdown (price, name, rating)
+   - Search bar
+   - Pagination controls
+   - Loading states
+   - Empty state
+
+2. ProductDetails.vue view:
+   - Large product image
+   - Product name, price, description
+   - Specifications list
+   - Stock availability
+   - Quantity selector
+   - Add to Cart button
+   - Related products section
+   - Reviews/ratings section
+
+3. Vuex products module:
+   - loadProducts, searchProducts, filterProducts
+   - getProduct, setFilters, resetFilters
+   - Track loading and error states
+
+4. Styling: Modern, responsive, mobile-friendly"
+
+================================================================================
+PHASE 9: SHOPPING CART & CHECKOUT
+================================================================================
+
+PROMPT 20: Shopping Cart Component
+--------------------------------------------------------------------------------
+"Create CartSidebar.vue component:
+- Slide-in sidebar from right
+- List all cart items with:
+  * Product image
+  * Name and price
+  * Quantity controls (+/-)
+  * Remove button
+  * Individual item total
+- Display subtotal, discounts, tax, shipping, total
+- Applied discount badges
+- 'Proceed to Checkout' button
+- Empty cart state with icon
+- Integrate with Vuex cart module
+- Real-time updates via Socket.IO
+- Animation for add/remove items"
+
+PROMPT 21: Checkout Process
+--------------------------------------------------------------------------------
+"Create Checkout.vue multi-step checkout:
+
+Step 1 - Review Cart:
+- Show all items with final prices
+- Edit quantities
+- Remove items
+
+Step 2 - Shipping Address:
+- Form fields: street, city, state, zip, country
+- Save address to profile option
+- Address validation
+
+Step 3 - Payment:
+- Payment method selection (Credit Card, PayPal, etc.)
+- Card information form (for demo, don't process real payments)
+- Billing address (same as shipping checkbox)
+
+Step 4 - Review & Confirm:
+- Summary of order
+- Total cost breakdown
+- Terms & conditions checkbox
+- Place Order button
+
+Features:
+- Step indicator (progress bar)
+- Back/Next navigation
+- Form validation
+- Save progress in session
+- Handle payment simulation
+- Create order on confirmation
+- Redirect to order success page"
+
+================================================================================
+PHASE 10: ORDER MANAGEMENT
+================================================================================
+
+PROMPT 22: Order Processing Backend
+--------------------------------------------------------------------------------
+"Create order management system:
+- POST /api/orders/create: Create order from cart
+  * Validate cart contents
+  * Lock in prices
+  * Create Order document
+  * Clear cart
+  * Send confirmation email (optional)
+  * Update inventory
+
+- GET /api/orders: Get user's order history
+  * Filter by status
+  * Sort by date
+  * Pagination
+
+- GET /api/orders/:id: Get order details
+  * Full item list
+  * Status history
+  * Tracking information
+  * Invoices
+  * Allow reorder
+
+- PUT /api/orders/:id/status: Update order status (admin)
+  * Validate status transitions
+  * Log status changes
+  * Notify customer
+
+- GET /api/orders/:id/track: Get tracking information"
+
+PROMPT 23: Orders Frontend
+--------------------------------------------------------------------------------
+"Create Orders.vue page:
+- List all user orders
+- For each order show:
+  * Order number
+  * Date
+  * Status badge (color-coded)
+  * Total amount
+  * Item count
+  * 'View Details' button
+- Click to expand order details:
+  * All items with images
+  * Shipping address
+  * Status timeline
+  * Reorder button
+- Empty state for no orders
+- Filter by status
+- Search by order number
+- Integrate with Vuex orders module"
+
+================================================================================
+PHASE 11: AI ASSISTANT & RECOMMENDATIONS
+================================================================================
+
+PROMPT 24: Recommendation Engine
+--------------------------------------------------------------------------------
+"Create AI recommendation system using RecommendationKnowledgeSource:
+
+1. Recommendation algorithms:
+   - Collaborative filtering (users who bought X also bought Y)
+   - Content-based (similar to browsing history)
+   - Category-based (complete the look)
+   - Price range matching
+   - Trending products
+
+2. Recommendation types:
+   - 'Frequently bought together'
+   - 'Based on your browsing'
+   - 'Complete your set'
+   - 'You might also like'
+
+3. API endpoints:
+   - GET /api/assistant/recommendations/:userId
+   - POST /api/assistant/analyze: Analyze cart for suggestions
+   - GET /api/assistant/similar/:productId
+   - POST /api/assistant/query: Natural language queries
+
+4. Scoring system:
+   - Relevance score (0-100)
+   - Consider user preferences
+   - Weight recent interactions higher
+   - Filter out-of-stock items
+
+5. Integration with Blackboard:
+   - Read user behavior data
+   - Read browsing history
+   - Write recommendations
+   - Update on new actions"
+
+PROMPT 25: Assistant Chat Interface
+--------------------------------------------------------------------------------
+"Create AssistantPanel.vue chat component:
+- Fixed position chat bubble (bottom right)
+- Click to expand chat window
+- Chat message list:
+  * User messages (right-aligned)
+  * Assistant messages (left-aligned)
+  * Timestamps
+- Input field with send button
+- Quick action buttons:
+  * 'Show recommendations'
+  * 'Find deals'
+  * 'Track my order'
+- Features:
+  * Auto-scroll to latest message
+  * Typing indicator
+  * Integration with Socket.IO for real-time
+- Vuex assistant module integration
+- Natural language processing for queries like:
+  * 'Show me laptops under $1000'
+  * 'What's on sale?'
+  * 'Track my order'"
+
+================================================================================
+PHASE 12: REAL-TIME FEATURES (SOCKET.IO)
+================================================================================
+
+PROMPT 26: Socket.IO Backend Setup
+--------------------------------------------------------------------------------
+"Set up Socket.IO server for real-time features:
+
+1. Server configuration in server.js:
+   - Initialize Socket.IO with Express server
+   - CORS configuration for frontend
+   - Authentication via JWT token
+
+2. Socket events to emit from backend:
+   - 'cart:updated': When cart changes
+   - 'price:changed': When product prices update
+   - 'recommendation:new': New recommendation available
+   - 'session:state-changed': Session state transition
+   - 'assistant:message': AI assistant response
+   - 'inventory:low': Low stock warning
+   - 'order:status-update': Order status changed
+
+3. Socket events to receive from frontend:
+   - 'user:connect': User connection with auth
+   - 'cart:action': Cart modifications
+   - 'assistant:query': User query
+
+4. Room management:
+   - User-specific rooms for private updates
+   - Session rooms for cart sync
+   - Broadcast rooms for global events
+
+5. Authentication:
+   - Verify JWT token on connection
+   - Associate socket with user ID
+
+6. Error handling and reconnection logic"
+
+PROMPT 27: Socket.IO Frontend Integration
+--------------------------------------------------------------------------------
+"Create Vuex socket module (store/modules/socket.js):
+
+1. Socket connection management:
+   - connectSocket(): Initialize connection
+   - disconnectSocket(): Close connection
+   - Handle reconnection automatically
+   - Send JWT token with connection
+
+2. Event listeners:
+   - Listen for 'cart:updated' → update cart state
+   - Listen for 'price:changed' → update product prices
+   - Listen for 'recommendation:new' → show notification
+   - Listen for 'session:state-changed' → update session
+   - Listen for 'assistant:message' → append to chat
+
+3. Event emitters:
+   - Emit 'cart:action' when user modifies cart
+   - Emit 'assistant:query' when user sends message
+   - Emit 'user:activity' for behavior tracking
+
+4. Integration with other modules:
+   - Update cart module on 'cart:updated'
+   - Update products module on 'price:changed'
+   - Update assistant module on 'recommendation:new'
+   - Update session module on 'session:state-changed'
+
+5. Connection status indicator:
+   - Show connected/disconnected status
+   - Reconnecting indicator
+   - Offline mode handling"
+
+================================================================================
+PHASE 13: USER PROFILE & PREFERENCES
+================================================================================
+
+PROMPT 28: User Profile Management
+--------------------------------------------------------------------------------
+"Create user profile system:
+
+1. Profile.vue component with tabs:
+   - Personal Info (name, email, phone)
+   - Preferences (categories, price range, notifications)
+   - Addresses (saved shipping addresses)
+   - Payment Methods (saved cards - demo only)
+   - Order History (link to Orders.vue)
+   - Browsing History (recent products viewed)
+
+2. Backend endpoints:
+   - PUT /api/auth/profile: Update profile
+   - POST /api/auth/preferences: Update preferences
+   - GET /api/auth/browsing-history: Get browsing history
+   - POST /api/auth/address: Add address
+   - DELETE /api/auth/address/:id: Remove address
+   - PUT /api/auth/password: Change password
+
+3. Track browsing:
+   - Log product views automatically
+   - Store in User.browsingHistory
+   - Limit to recent 50 products"
+
+================================================================================
+PHASE 14: SEARCH & FILTERS
+================================================================================
+
+PROMPT 29: Advanced Search Features
+--------------------------------------------------------------------------------
+"Implement advanced product search:
+
+1. Backend search improvements:
+   - MongoDB text indexes on name, description, tags
+   - Fuzzy matching for typos
+   - Autocomplete suggestions
+   - Search ranking by relevance
+   - Filter combinations (category AND price AND search)
+   - Sort options (relevance, price, rating, newest)
+   - Faceted search (show available filters with counts)
+   - Search analytics (track popular searches)
+
+2. Frontend SearchBar component:
+   - Autocomplete dropdown
+   - Recent searches
+   - Popular searches
+   - Debounced input (300ms)
+   - Clear button
+   - Voice search button (optional)
+   - Search suggestions as user types
+
+3. Filter Sidebar:
+   - Category checkboxes with counts
+   - Price range slider
+   - Rating filter (stars)
+   - Brand filter (if applicable)
+   - Availability (in stock only)
+   - Clear all filters button
+
+4. Search results page:
+   - Show search query
+   - Result count
+   - Sort dropdown
+   - Filter sidebar"
+
+================================================================================
+PHASE 15: ADMIN DASHBOARD (BONUS)
+================================================================================
+
+PROMPT 30: Admin Panel
+--------------------------------------------------------------------------------
+"Create admin dashboard (optional):
+
+1. Admin authentication:
+   - Admin role in User model
+   - Protect admin routes with role middleware
+   - Admin login page
+
+2. Dashboard pages:
+   - Overview (sales, orders, users stats)
+   - Product Management (CRUD operations)
+   - Order Management (view all, update status)
+   - User Management (view users, disable accounts)
+   - Rules Management (create/edit discount rules)
+   - Analytics (charts and graphs)
+
+3. Admin API endpoints:
+   - GET /api/admin/stats: Dashboard statistics
+   - GET /api/admin/products: All products with management
+   - POST /api/admin/products: Create product
+   - PUT /api/admin/products/:id: Update product
+   - DELETE /api/admin/products/:id: Delete product
+   - GET /api/admin/orders: All orders
+   - PUT /api/admin/orders/:id/status: Update order status
+   - GET /api/admin/users: All users
+   - PUT /api/admin/users/:id/disable: Disable user"
+
+================================================================================
+PHASE 16: TESTING & DEPLOYMENT
+================================================================================
+
+PROMPT 31: Unit Tests
+--------------------------------------------------------------------------------
+"Create Jest unit tests:
+
+1. Pattern tests (tests/patterns.test.js):
+   - Composite Pattern: Test discount calculations
+   - State Pattern: Test state transitions
+   - Visitor Pattern: Test cart operations
+   - Interpreter Pattern: Test rule evaluation
+
+2. Architecture tests (tests/architecture.test.js):
+   - Blackboard: Test data operations
+   - Knowledge Sources: Test independent processing
+   - Rule Engine: Test coordination
+
+3. API tests:
+   - Auth endpoints (register, login, token validation)
+   - Product endpoints (CRUD, search, filter)
+   - Cart endpoints (add, update, remove)
+   - Order endpoints (create, retrieve)
+
+4. Frontend tests:
+   - Component rendering
+   - Vuex store actions
+   - API service methods"
+
+PROMPT 32: Docker Deployment
+--------------------------------------------------------------------------------
+"Create Docker deployment configuration:
+
+1. Dockerfile.backend:
+   - Base image: node:18-alpine
+   - Install dependencies
+   - Copy source code
+   - Expose port 3000
+   - CMD: npm start
+
+2. Dockerfile.frontend:
+   - Multi-stage build
+   - Stage 1: Build Vue app
+   - Stage 2: Serve with nginx
+   - Copy build artifacts
+   - Nginx configuration
+   - Expose port 80
+
+3. docker-compose.yml:
+   - Services: backend, frontend, mongodb
+   - Network configuration
+   - Volume mounts for persistence
+   - Environment variables
+   - Port mappings
+
+4. nginx.conf:
+   - Serve static files
+   - Proxy API requests to backend
+   - Gzip compression
+   - Caching headers
+
+5. Commands:
+   - docker-compose up --build
+   - docker-compose down
+   - docker-compose logs"
+
+PROMPT 33: Cloud Deployment
+--------------------------------------------------------------------------------
+"Prepare for cloud deployment:
+
+1. Environment Configuration:
+   - Separate .env files for dev/prod
+   - Environment-specific API URLs
+   - Production MongoDB connection string
+   - JWT secret from environment
+   - Secure secret management
+
+2. Render.com deployment:
+   - Create render.yaml configuration
+   - Web service for backend
+   - Static site for frontend
+   - MongoDB Atlas connection
+   - Environment variables setup
+
+3. Security hardening:
+   - Enable HTTPS only
+   - Set secure cookie flags
+   - Implement rate limiting
+   - Add helmet.js security headers
+   - Validate all inputs
+   - Sanitize outputs
+
+4. Performance optimization:
+   - Enable gzip compression
+   - CDN for static assets
+   - Database indexing
+   - Response caching
+   - Minify JavaScript/CSS
+   - Image optimization
+
+5. Monitoring:
+   - Add logging (Winston)
+   - Error tracking (Sentry optional)
+   - Performance monitoring
+   - Uptime monitoring"
+
+================================================================================
+PHASE 17: FINAL POLISH
+================================================================================
+
+PROMPT 34: UI/UX Improvements
+--------------------------------------------------------------------------------
+"Enhance user interface:
+
+1. Loading states:
+   - Skeleton screens for product loading
+   - Spinner for async operations
+   - Progress bar for checkout steps
+   - Button loading states
+
+2. Notifications:
+   - Toast notifications (success, error, info)
+   - Action notifications ('Item added to cart')
+   - Position: top-right
+   - Auto-dismiss after 3 seconds
+
+3. Empty states:
+   - Empty cart illustration
+   - No orders yet message
+   - No search results found
+   - No recommendations available
+
+4. Responsive design:
+   - Mobile-first approach
+   - Breakpoints: 320px, 768px, 1024px, 1440px
+   - Touch-friendly buttons on mobile
+   - Collapsible menus
+
+5. Accessibility:
+   - Semantic HTML
+   - ARIA labels
+   - Keyboard navigation
+   - Focus indicators
+   - Screen reader support
+
+6. Animations:
+   - Page transitions
+   - Cart item add/remove
+   - Sidebar slide-in
+   - Loading animations
+   - Hover effects
+   - Smooth scrolling"
+
+PROMPT 35: Documentation
+--------------------------------------------------------------------------------
+"Create comprehensive documentation:
+
+1. README.md:
+   - Project overview
+   - Features list
+   - Technology stack
+   - Prerequisites
+   - Installation instructions
+   - Running locally
+   - Deployment guide
+   - Environment variables
+   - API documentation link
+
+2. API Documentation:
+   - Endpoint list with methods
+   - Request/response examples
+   - Authentication requirements
+   - Error codes and messages
+   - Rate limiting info
+
+3. Code Documentation:
+   - JSDoc comments for functions
+   - Class documentation
+   - Pattern implementation notes
+   - Architecture diagrams
+   - Data flow explanations
+
+4. Architecture Documentation:
+   - Design pattern explanations
+   - Blackboard Architecture overview
+   - Component interactions
+   - State management flow
+   - Real-time communication
+
+5. User Guide:
+   - How to register
+   - How to browse products
+   - How to use cart
+   - How to checkout
+   - How to track orders"
+
+================================================================================
+PROMPT USAGE TIPS
+================================================================================
+
+BEST PRACTICES:
+--------------------------------------------------------------------------------
+1. Use prompts in sequence - Each builds on previous work
+2. Test after each phase - Don't accumulate bugs
+3. Customize prompts - Add your specific requirements
+4. Iterate - If result isn't perfect, refine the prompt
+5. Combine prompts - For complex features, break into smaller prompts
+6. Be specific - More details = better results
+7. Provide context - Tell GPT what you've already built
+8. Ask for explanations - Add "Explain the implementation" to understand
+
+EXAMPLE PROMPT STRUCTURE:
+--------------------------------------------------------------------------------
+"I'm building an e-commerce shopping assistant using Node.js and Vue.js.
+I've already implemented: [list what's done]
+
+Now I need: [specific feature]
+
+Requirements:
+- [requirement 1]
+- [requirement 2]
+
+Constraints:
+- [constraint 1]
+
+Please provide:
+1. Complete code implementation
+2. Explanation of how it works
+3. Integration steps
+4. Any dependencies needed"
+
+DEBUGGING PROMPTS:
+--------------------------------------------------------------------------------
+- "I'm getting this error: [error message]. Here's my code: [code]. How do I 
+   fix it?"
+- "My [feature] isn't working as expected. Here's what happens: [description]. 
+   Here's my code: [code]. What's wrong?"
+- "How do I optimize this code: [code] for better performance?"
+- "This code works but isn't following best practices: [code]. How can I 
+   improve it?"
+
+REFACTORING PROMPTS:
+--------------------------------------------------------------------------------
+- "Refactor this code to follow [pattern] design pattern: [code]"
+- "Make this code more maintainable: [code]"
+- "Add error handling to this code: [code]"
+- "Add TypeScript types to this JavaScript code: [code]"
+
+================================================================================
+                              END OF DOCUMENT
+================================================================================

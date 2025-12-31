@@ -1,0 +1,11 @@
+run = "cd backend && npm install && node server.js"
+
+[nix]
+channel = "stable-22_11"
+
+[deployment]
+run = ["sh", "-c", "cd backend && npm install && node server.js"]
+
+[[ports]]
+localPort = 3000
+externalPort = 80
