@@ -260,11 +260,30 @@ body {
   min-height: calc(100vh - 70px);
   position: relative;
   z-index: 1;
+  padding: 0;
 }
 
+/* Mobile Responsive Styles */
 @media (max-width: 768px) {
+  #app {
+    font-size: 14px;
+  }
+
   .main-container {
     flex-direction: column;
+    min-height: calc(100vh - 60px);
+    padding: 0;
+  }
+  
+  /* Make body scrollable on mobile */
+  body {
+    overflow-x: hidden;
+  }
+}
+
+@media (max-width: 480px) {
+  #app {
+    font-size: 13px;
   }
 }
 
