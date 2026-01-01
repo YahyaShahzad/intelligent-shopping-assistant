@@ -635,6 +635,9 @@ async function initializeData() {
     }
 }
 
+// Handle OPTIONS preflight for CORS
+app.options('*', cors());
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/session', sessionRoutes);
