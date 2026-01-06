@@ -1,0 +1,42 @@
+# Fly.io configuration for Shopping Assistant Backend
+app = "shopping-assistant-backend"
+primary_region = "pdx"
+
+[build]
+  dockerfile = "docker/Dockerfile.backend"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "3000"
+
+[[services]]
+  internal_port = 3000
+  processes = ["app"]
+  protocol = "tcp"
+  
+  [services.concurrency]
+    hard_limit = 25
+    soft_limit = 20
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+    force_https = true
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+  [[services.tcp_checks]]
+    grace_period = "30s"
+    interval = "15s"
+    timeout = "5s"
+
+[[statics]]
+  guest_path = "/app/public"
+  url_prefix = "/public"
+
+[env]
+  MONGODB_URI = ""  # Will be set via fly secrets set MONGODB_URI
+  JWT_SECRET = ""   # Will be set via fly secrets set JWT_SECRET
+  NODE_ENV = "production"
