@@ -6,6 +6,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const winston = require('winston');
 const helmet = require('helmet');
+const path = require('path');
 
 // Load environment variables
 dotenv.config();
@@ -695,6 +696,17 @@ app.get('/', (req, res) => {
         }
     });
 });
+
+// Serve built frontend in production (Replit deployment)
+if (process.env.NODE_ENV === 'production') {
+    const distPath = path.join(__dirname, '../frontend/dist');
+    app.use(express.static(distPath));
+
+    // SPA fallback to index.html
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+    });
+}
 
 // Socket.io for real-time updates
 const service = getShoppingAssistantService();
