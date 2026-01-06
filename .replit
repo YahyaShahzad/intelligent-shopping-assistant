@@ -1,11 +1,11 @@
-run = "cd backend && npm install && node server.js"
+run = "npm install && npm run start-all"
 
 [nix]
 channel = "stable-22_11"
 
-[deployment]
-run = ["sh", "-c", "cd backend && npm install && node server.js"]
-
 [[ports]]
 localPort = 3000
+
+[[ports]]
+localPort = 8084
 externalPort = 80

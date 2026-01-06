@@ -8,6 +8,7 @@
     "dev": "PORT=3011 nodemon backend/server.js",
     "client": "cd frontend && npm run serve",
     "dev:full": "concurrently \"npm run dev\" \"npm run client\"",
+    "start-all": "concurrently \"NODE_ENV=production MONGODB_URI=mongodb://localhost:27017/shopping_assistant npm start\" \"cd frontend && npm run serve\"",
     "test": "jest --coverage",
     "docker:build": "docker-compose build",
     "docker:up": "docker-compose up",
