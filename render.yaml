@@ -15,7 +15,7 @@ services:
       - key: PORT
         sync: false  # Render supplies PORT; leave empty or set if needed
       - key: MONGODB_URI
-         value: mongodb+srv://yahyashahzadanees_db_user:ZIOYBQrolvly7r5Z@shoppingassistant.adspbes.mongodb.net/shopping_assistant?retryWrites=true&w=majority&appName=shoppingassistant
+        value: mongodb+srv://yahyashahzadanees_db_user:ZIOYBQrolvly7r5Z@shoppingassistant.adspbes.mongodb.net/shopping_assistant?retryWrites=true&w=majority&appName=shoppingassistant
       - key: JWT_SECRET
         generateValue: true
       - key: FRONTEND_URL
