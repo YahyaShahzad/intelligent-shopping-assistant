@@ -49,7 +49,9 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
-        origin: process.env.FRONTEND_URL || ['http://localhost:8080', 'http://localhost:8081', 'http://localhost:8082', 'http://127.0.0.1:8080', 'https://ai-shopping-assistant-frontend.onrender.com'],
+        origin: process.env.NODE_ENV === 'production' 
+            ? (process.env.FRONTEND_URL || ['https://ai-shopping-assistant-frontend.onrender.com'])
+            : true, // Allow all origins in development
         methods: ['GET', 'POST']
     }
 });
@@ -60,7 +62,9 @@ app.use(helmet());
 
 // CORS
 app.use(cors({
-    origin: process.env.FRONTEND_URL || ['http://localhost:8080', 'http://localhost:8081', 'http://localhost:8082', 'http://127.0.0.1:8080', 'https://ai-shopping-assistant-frontend.onrender.com'],
+    origin: process.env.NODE_ENV === 'production'
+        ? (process.env.FRONTEND_URL || 'https://ai-shopping-assistant-frontend.onrender.com')
+        : true, // Allow all origins in development
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
