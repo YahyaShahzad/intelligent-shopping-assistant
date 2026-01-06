@@ -8,11 +8,11 @@ module.exports = defineConfig({
     allowedHosts: 'all',
     proxy: {
       '/api': {
-        target: 'http://localhost:3011',
+        target: 'http://localhost:3000',
         changeOrigin: true
       },
       '/socket.io': {
-        target: 'http://localhost:3011',
+        target: 'http://localhost:3000',
         changeOrigin: true,
         ws: true
       }
