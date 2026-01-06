@@ -6,7 +6,23 @@
         <p class="tagline">Intelligent Shopping Assistant</p>
       </div>
 
-      <div class="auth-tabs">
+      <!-- User Type Selection -->
+      <div class="user-type-tabs">
+        <button 
+          :class="['user-type-tab', { active: !isAdminLogin }]"
+          @click="isAdminLogin = false"
+        >
+          User Login
+        </button>
+        <button 
+          :class="['user-type-tab admin-tab', { active: isAdminLogin }]"
+          @click="isAdminLogin = true; isLogin = true"
+        >
+          Admin Login
+        </button>
+      </div>
+
+      <div v-if="!isAdminLogin" class="auth-tabs">
         <button 
           :class="['tab', { active: isLogin }]"
           @click="isLogin = true"
@@ -22,6 +38,7 @@
       </div>
 
       <form @submit.prevent="handleSubmit" class="auth-form">
+
         <div v-if="!isLogin" class="form-group">
           <label for="name">Full Name</label>
           <input
@@ -71,8 +88,12 @@
         </div>
 
         <button type="submit" class="submit-btn" :disabled="loading">
-          <span v-if="!loading">{{ isLogin ? 'Login' : 'Create Account' }}</span>
-          <span v-else>{{ isLogin ? 'Logging in...' : 'Creating account...' }}</span>
+          <span v-if="!loading">
+            {{ isLogin ? 'Login' : 'Create Account' }}
+          </span>
+          <span v-else>
+            {{ isLogin ? 'Logging in...' : 'Creating account...' }}
+          </span>
         </button>
       </form>
 
@@ -99,6 +120,7 @@ export default {
   data() {
     return {
       isLogin: true,
+      isAdminLogin: false,
       formData: {
         email: '',
         password: '',
@@ -111,7 +133,7 @@ export default {
   },
 
   methods: {
-    ...mapActions('auth', ['login', 'register']),
+    ...mapActions('auth', ['login', 'register', 'logout']),
 
     async handleSubmit() {
       this.error = null
@@ -119,10 +141,24 @@ export default {
 
       try {
         if (this.isLogin) {
-          await this.login({
+          const response = await this.login({
             email: this.formData.email,
             password: this.formData.password
           })
+          
+          // Check if user is admin and redirect accordingly
+          const user = response.user
+          if (this.isAdminLogin) {
+            if (user.isAdmin) {
+              this.$router.push('/admin')
+            } else {
+              this.error = 'Access denied. Admin privileges required.'
+              await this.logout()
+              return
+            }
+          } else {
+            this.$router.push('/')
+          }
         } else {
           await this.register({
             email: this.formData.email,
@@ -130,10 +166,8 @@ export default {
             name: this.formData.name,
             isStudent: this.formData.isStudent
           })
+          this.$router.push('/')
         }
-
-        // Redirect to home after successful auth
-        this.$router.push('/')
       } catch (error) {
         this.error = error.message || 'Authentication failed'
       } finally {
@@ -185,6 +219,38 @@ export default {
   font-size: 1rem;
 }
 
+.user-type-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  background: rgba(15, 23, 42, 0.5);
+  padding: 0.5rem;
+  border-radius: 12px;
+}
+
+.user-type-tab {
+  flex: 1;
+  padding: 0.75rem;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.user-type-tab.active {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+}
+
+.user-type-tab.admin-tab.active {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
+}
+
 .auth-tabs {
   display: flex;
   gap: 0.5rem;
@@ -210,6 +276,27 @@ export default {
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   color: white;
   box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+}
+
+.admin-notice {
+  padding: 1rem;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 12px;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.admin-notice p {
+  color: #fbbf24;
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin: 0 0 0.25rem 0;
+}
+
+.admin-notice small {
+  color: #fcd34d;
+  font-size: 0.875rem;
 }
 
 .auth-form {
@@ -301,6 +388,15 @@ export default {
 .submit-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.admin-btn {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+  box-shadow: 0 6px 20px rgba(251, 191, 36, 0.4);
+}
+
+.admin-btn:hover:not(:disabled) {
+  box-shadow: 0 8px 30px rgba(251, 191, 36, 0.6);
 }
 
 .auth-footer {

@@ -25,11 +25,41 @@ router.post('/start', async (req, res) => {
 router.get('/:sessionId', async (req, res) => {
     try {
         const { sessionId } = req.params;
+        const { userId } = req.query; // Optional userId to validate ownership
+        
         const result = service.getSession(sessionId);
+        
+        // If userId provided, verify session belongs to this user
+        if (userId && result.userId !== userId) {
+            return res.status(403).json({ error: 'Session does not belong to this user' });
+        }
+        
         res.json(result);
     } catch (error) {
         console.error('Error getting session:', error);
         res.status(404).json({ error: error.message });
+    }
+});
+
+// Get active session for a user
+router.get('/user/:userId/active', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        
+        // Get all sessions and find the most recent active one for this user
+        const sessions = service.getAllSessions();
+        const userSession = sessions
+            .filter(s => s.userId === userId && s.currentState !== 'Completed')
+            .sort((a, b) => new Date(b.startTime) - new Date(a.startTime))[0];
+        
+        if (userSession) {
+            res.json(userSession);
+        } else {
+            res.status(404).json({ error: 'No active session found for user' });
+        }
+    } catch (error) {
+        console.error('Error getting user active session:', error);
+        res.status(500).json({ error: error.message });
     }
 });
 

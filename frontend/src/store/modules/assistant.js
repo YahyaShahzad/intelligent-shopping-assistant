@@ -44,7 +44,24 @@ export default {
       try {
         const userId = rootState.session.userId
         const response = await api.get(`/assistant/${userId}`)
-        commit('SET_RECOMMENDATIONS', response.data.items || [])
+        
+        // Handle new format with order-based recommendations
+        if (response.data.items) {
+          // Transform items to recommendation format
+          const recommendations = response.data.items.map(item => ({
+            product: item,
+            name: item.name,
+            price: item.price,
+            reason: response.data.basedOnOrders 
+              ? `Based on your previous ${response.data.orderCount} order${response.data.orderCount > 1 ? 's' : ''}` 
+              : 'Trending product',
+            score: item.ratings?.average ? item.ratings.average / 5 : 0.7,
+            isPurchaseBased: response.data.basedOnOrders
+          }))
+          
+          commit('SET_RECOMMENDATIONS', recommendations)
+        }
+        
         return response.data
       } catch (error) {
         console.error('Error getting recommendations:', error)

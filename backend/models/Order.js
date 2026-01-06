@@ -7,6 +7,12 @@ const orderSchema = new mongoose.Schema({
         unique: true
         // FIX: Removed redundant index - unique:true already creates an index
     },
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+        index: true
+    },
     userId: {
         type: String,
         required: true,
@@ -17,6 +23,10 @@ const orderSchema = new mongoose.Schema({
         required: true
     },
     items: [{
+        product: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Product'
+        },
         productId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Product'

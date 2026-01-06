@@ -1,14 +1,15 @@
 <template>
-  <div id="app">
+  <div id="app" :class="{ 'theme-dark': darkMode }">
+    <!-- Hide Header, AssistantPanel, and CartSidebar on Admin pages -->
     <Header 
-      v-if="isAuthenticated"
+      v-if="isAuthenticated && !isAdminPage"
       :cartCount="cartItemCount" 
       :user="currentUser"
       @toggle-cart="toggleCart"
       @logout="handleLogout"
     />
     
-    <div class="main-container" v-if="isAuthenticated">
+    <div class="main-container" v-if="isAuthenticated && !isAdminPage">
       <AssistantPanel 
         v-if="showAssistant"
         :suggestions="suggestions"
@@ -35,7 +36,10 @@
       />
     </div>
 
-    <router-view v-else />
+    <!-- Admin pages without Header/Cart/Assistant -->
+    <router-view v-if="isAuthenticated && isAdminPage" />
+
+    <router-view v-else-if="!isAuthenticated" />
 
     <LoadingOverlay v-if="loading" />
     <NotificationToast 
@@ -71,7 +75,8 @@ export default {
       showCart: false,
       showAssistant: true,
       notification: null,
-      availableCoupons: []
+      availableCoupons: [],
+      darkMode: false
     }
   },
 
@@ -80,44 +85,98 @@ export default {
     ...mapState('assistant', ['suggestions', 'recommendations', 'discounts']),
     ...mapState('products', ['products']),
     ...mapGetters('cart', ['cartItemCount']),
-    ...mapGetters('auth', ['isAuthenticated', 'currentUser'])
+    ...mapGetters('auth', ['isAuthenticated', 'currentUser']),
+    
+    isAdminPage() {
+      return this.$route.path.startsWith('/admin')
+    }
   },
 
   async mounted() {
+    // Theme init
+    try {
+      const stored = localStorage.getItem('appTheme') || localStorage.getItem('adminTheme')
+      this.applyTheme(stored === 'dark' ? 'dark' : 'light')
+    } catch (e) {}
+    this._onTheme = (e) => this.applyTheme(e.detail?.theme)
+    window.addEventListener('theme-changed', this._onTheme)
+
     // Initialize auth from localStorage
     this.initializeAuth()
     
     if (this.isAuthenticated) {
+      console.log('User is authenticated, initializing app...')
+      console.log('Current user:', this.currentUser)
+      
+      // Only fetch user from server if user object is missing
+      if (!this.currentUser) {
+        try {
+          console.log('User object missing, fetching from server...')
+          await this.getCurrentUser()
+          console.log('Current user loaded:', this.currentUser)
+        } catch (error) {
+          console.error('Failed to fetch user:', error)
+          // If we can't get user but have token, don't fail - user data from localStorage is enough
+          if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+            console.error('Token invalid, clearing session')
+            await this.logout()
+            this.$router.push('/auth')
+            return
+          }
+        }
+      } else {
+        console.log('User object already present:', this.currentUser.email)
+      }
+      
+      // Try to initialize session, but don't fail if it doesn't work
       try {
-        console.log('User is authenticated, initializing app...')
-        await this.getCurrentUser()
-        console.log('Current user loaded:', this.currentUser)
-        
         await this.initializeSession()
         console.log('Session initialized')
         
+        // Load cart after session is initialized
+        try {
+          await this.$store.dispatch('cart/loadCart')
+          console.log('Cart loaded')
+          
+          // Force UI update to ensure cart count is displayed
+          await this.$nextTick()
+          this.$forceUpdate()
+        } catch (error) {
+          console.warn('Cart loading failed (non-critical):', error.message)
+        }
+      } catch (error) {
+        console.warn('Session initialization failed (non-critical):', error.message)
+      }
+      
+      // Try to load products, but don't fail if it doesn't work
+      try {
         await this.loadProducts()
         console.log('Products loaded')
-        
+      } catch (error) {
+        console.warn('Products loading failed (non-critical):', error.message)
+      }
+      
+      // Try to load coupons, but don't fail if it doesn't work
+      try {
         await this.loadCoupons()
         console.log('Coupons loaded')
-        
+      } catch (error) {
+        console.warn('Coupons loading failed (non-critical):', error.message)
+      }
+      
+      // Try to connect WebSocket, but don't fail if it doesn't work
+      try {
         this.connectWebSocket()
         console.log('WebSocket connected')
       } catch (error) {
-        console.error('Initialization error:', error)
-        this.showNotification('Failed to initialize app: ' + error.message, 'error')
-        
-        // If there's an error, redirect to auth after a delay
-        setTimeout(() => {
-          this.$router.push('/auth')
-        }, 2000)
+        console.warn('WebSocket connection failed (non-critical):', error.message)
       }
     }
   },
 
   // FIX: Add cleanup to prevent memory leaks
   beforeUnmount() {
+    if (this._onTheme) window.removeEventListener('theme-changed', this._onTheme)
     // Disconnect WebSocket when component unmounts
     if (this.$store.state.socket.connected) {
       this.$store.dispatch('socket/disconnectWebSocket')
@@ -211,6 +270,10 @@ export default {
       setTimeout(() => {
         this.notification = null
       }, 3000)
+    },
+
+    applyTheme(theme) {
+      this.darkMode = theme === 'dark'
     }
   }
 }
@@ -280,6 +343,21 @@ body {
     overflow-x: hidden;
   }
 }
+
+/* Dark theme (global) */
+.theme-dark#app {
+  background: radial-gradient(circle at 20% 20%, rgba(2,6,23,0.9) 0%, rgba(2,6,23,1) 40%),
+              linear-gradient(135deg, #0b1220 0%, #0f172a 50%, #0b1220 100%);
+  color: #e2e8f0;
+}
+.theme-dark #app::before {
+  background: radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+              radial-gradient(circle at 80% 50%, rgba(236, 72, 153, 0.08) 0%, transparent 50%);
+}
+.theme-dark .main-container { color: #e2e8f0; }
+.theme-dark a { color: #93c5fd; }
+.theme-dark ::-webkit-scrollbar-track { background: rgba(30, 41, 59, 0.6); }
+.theme-dark ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, #1d4ed8, #7c3aed); border-color: rgba(30, 41, 59, 0.6); }
 
 @media (max-width: 480px) {
   #app {

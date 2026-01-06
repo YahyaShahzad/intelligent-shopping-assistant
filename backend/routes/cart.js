@@ -7,10 +7,18 @@ const service = getShoppingAssistantService();
 // Add item to cart
 router.post('/add', async (req, res) => {
     try {
-        const { sessionId, product } = req.body;
+        const { sessionId, product, userId } = req.body;
         
         if (!sessionId || !product) {
             return res.status(400).json({ error: 'sessionId and product are required' });
+        }
+
+        // Validate session belongs to user if userId provided
+        if (userId) {
+            const session = service.getSession(sessionId);
+            if (session.userId !== userId) {
+                return res.status(403).json({ error: 'Session does not belong to this user' });
+            }
         }
 
         const result = await service.addToCart(sessionId, product);

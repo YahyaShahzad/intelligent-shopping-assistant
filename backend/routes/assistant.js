@@ -16,6 +16,30 @@ router.get('/system/stats', (req, res) => {
     }
 });
 
+// Get user profile analysis (NEW)
+router.get('/profile/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const profile = await professionalAssistant.buildUserProfile(userId);
+        res.json(profile);
+    } catch (error) {
+        console.error('Error building user profile:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get bundle suggestions (NEW)
+router.get('/bundles/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const bundles = await professionalAssistant.generateBundleSuggestions(userId);
+        res.json({ bundles });
+    } catch (error) {
+        console.error('Error generating bundles:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Apply coupon to session
 router.post('/coupon/apply', async (req, res) => {
     try {

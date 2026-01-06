@@ -26,34 +26,14 @@ export default {
       state.userId = null
       state.user = null
       state.sessionState = 'Browsing'
+      localStorage.removeItem('sessionId')
+      localStorage.removeItem('userId')
     }
   },
 
   actions: {
     async initializeSession({ commit, rootState }) {
       try {
-        // Check if we already have a session in localStorage
-        const storedSessionId = localStorage.getItem('sessionId')
-        if (storedSessionId) {
-          // Try to validate existing session
-          try {
-            const response = await api.get(`/session/${storedSessionId}`)
-            const user = rootState.auth.user
-            commit('SET_SESSION', {
-              sessionId: storedSessionId,
-              userId: user?._id || response.data.userId,
-              user: user
-            })
-            commit('SET_SESSION_STATE', response.data.currentState)
-            console.log('Restored existing session:', storedSessionId)
-            return response.data
-          } catch (e) {
-            // Session is invalid, clear it and create new one
-            console.log('Stored session invalid, creating new session')
-            localStorage.removeItem('sessionId')
-          }
-        }
-
         // Get authenticated user from auth module
         const user = rootState.auth.user
         
@@ -61,7 +41,55 @@ export default {
           throw new Error('User not authenticated')
         }
 
-        // Start session with authenticated user
+        // First, try to find ANY active session for this user on the backend
+        try {
+          const activeSessionResponse = await api.get(`/session/user/${user._id}/active`)
+          if (activeSessionResponse.data && activeSessionResponse.data.sessionId) {
+            const sessionData = activeSessionResponse.data
+            commit('SET_SESSION', {
+              sessionId: sessionData.sessionId,
+              userId: user._id,
+              user: user
+            })
+            commit('SET_SESSION_STATE', sessionData.currentState || 'Browsing')
+            localStorage.setItem('sessionId', sessionData.sessionId)
+            localStorage.setItem('userId', user._id)
+            console.log('Restored active session from backend:', sessionData.sessionId)
+            return sessionData
+          }
+        } catch (e) {
+          console.log('No active session found on backend, will create new one')
+        }
+
+        // Check if we have a stored session for THIS user
+        const storedSessionId = localStorage.getItem('sessionId')
+        const storedUserId = localStorage.getItem('userId')
+        
+        if (storedSessionId && storedUserId === user._id) {
+          // Try to validate existing session for this user
+          try {
+            const response = await api.get(`/session/${storedSessionId}?userId=${user._id}`)
+            // Verify session belongs to current user
+            if (response.data.userId === user._id) {
+              commit('SET_SESSION', {
+                sessionId: storedSessionId,
+                userId: user._id,
+                user: user
+              })
+              commit('SET_SESSION_STATE', response.data.currentState)
+              console.log('Restored existing session for user:', user._id, storedSessionId)
+              return response.data
+            }
+          } catch (e) {
+            console.log('Stored session invalid or belongs to different user, creating new session')
+          }
+        }
+
+        // Clear any old session data from different user
+        localStorage.removeItem('sessionId')
+        localStorage.removeItem('userId')
+
+        // Start new session with authenticated user
         console.log('Starting new session for user:', user._id)
         const response = await api.post('/session/start', { 
           userId: user._id,
@@ -85,6 +113,7 @@ export default {
         })
 
         localStorage.setItem('sessionId', response.data.sessionId)
+        localStorage.setItem('userId', user._id)
         console.log('New session created:', response.data.sessionId)
         
         return response.data

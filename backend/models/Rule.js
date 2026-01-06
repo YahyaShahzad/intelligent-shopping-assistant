@@ -5,10 +5,23 @@ const ruleSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    description: {
+        type: String,
+        default: ''
+    },
     type: {
         type: String,
         required: true,
-        enum: ['USER_ATTRIBUTE', 'CART_CONDITION', 'CATEGORY_BUNDLE', 'TIME_BASED', 'PRODUCT_BASED']
+        enum: ['student', 'category', 'bundle', 'quantity', 'seasonal', 'USER_ATTRIBUTE', 'CART_CONDITION', 'CATEGORY_BUNDLE', 'TIME_BASED', 'PRODUCT_BASED']
+    },
+    discount: {
+        type: Number,
+        default: 0
+    },
+    discountType: {
+        type: String,
+        enum: ['percentage', 'fixed'],
+        default: 'percentage'
     },
     condition: {
         expression: String,

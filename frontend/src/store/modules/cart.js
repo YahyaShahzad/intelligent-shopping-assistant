@@ -85,6 +85,7 @@ export default {
         
         const response = await api.post('/cart/add', {
           sessionId,
+          userId: rootState.auth.user?._id,
           product: {
             productId,
             name: productData.name,

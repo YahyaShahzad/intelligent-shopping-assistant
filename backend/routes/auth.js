@@ -77,9 +77,12 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
+        
+        console.log('Login attempt:', { email, passwordLength: password?.length });
 
         // Validation
         if (!email || !password) {
+            console.log('Login failed: Missing credentials');
             return res.status(400).json({ 
                 error: 'Email and password are required' 
             });
@@ -88,14 +91,20 @@ router.post('/login', async (req, res) => {
         // Find user (include password for comparison)
         const user = await User.findOne({ email }).select('+password');
         if (!user) {
+            console.log('Login failed: User not found:', email);
             return res.status(401).json({ 
                 error: 'Invalid email or password' 
             });
         }
 
+        console.log('User found:', { email: user.email, userId: user._id, hasPassword: !!user.password });
+
         // Check password
         const isMatch = await user.comparePassword(password);
+        console.log('Password match result:', isMatch);
+        
         if (!isMatch) {
+            console.log('Login failed: Invalid password for:', email);
             return res.status(401).json({ 
                 error: 'Invalid email or password' 
             });
@@ -213,6 +222,54 @@ router.delete('/account', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error('Delete account error:', error);
         res.status(500).json({ error: 'Failed to delete account' });
+    }
+});
+
+// Update user theme preference
+router.put('/theme', authenticateToken, async (req, res) => {
+    try {
+        const { theme } = req.body;
+
+        // Validate theme value
+        if (!theme || !['light', 'dark'].includes(theme)) {
+            return res.status(400).json({ 
+                error: 'Theme must be either "light" or "dark"' 
+            });
+        }
+
+        // Update user preferences
+        const user = await User.findByIdAndUpdate(
+            req.userId,
+            { 'preferences.theme': theme },
+            { new: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.json({ 
+            message: 'Theme preference updated',
+            theme: user.preferences.theme 
+        });
+    } catch (error) {
+        console.error('Update theme error:', error);
+        res.status(500).json({ error: 'Failed to update theme preference' });
+    }
+});
+
+// Get user preferences (including theme)
+router.get('/preferences', authenticateToken, async (req, res) => {
+    try {
+        const user = await User.findById(req.userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.json({ preferences: user.preferences });
+    } catch (error) {
+        console.error('Get preferences error:', error);
+        res.status(500).json({ error: 'Failed to fetch preferences' });
     }
 });
 

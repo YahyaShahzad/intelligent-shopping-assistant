@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
     email: {
@@ -27,6 +27,10 @@ const userSchema = new mongoose.Schema({
         select: false
     },
     isStudent: {
+        type: Boolean,
+        default: false
+    },
+    isAdmin: {
         type: Boolean,
         default: false
     },

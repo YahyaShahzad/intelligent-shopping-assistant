@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const winston = require('winston');
+const helmet = require('helmet');
 
 // Load environment variables
 dotenv.config();
@@ -16,6 +17,10 @@ const cartRoutes = require('./routes/cart');
 const productsRoutes = require('./routes/products');
 const assistantRoutes = require('./routes/assistant');
 const ordersRoutes = require('./routes/orders');
+const adminRoutes = require('./routes/admin');
+
+// Import middleware
+const { loginLimiter, apiLimiter, searchLimiter } = require('./middleware/rateLimiter');
 
 // Import services
 const { getShoppingAssistantService } = require('./services/ShoppingAssistantService');
@@ -44,24 +49,36 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
-        origin: process.env.FRONTEND_URL || 'https://ai-shopping-assistant-frontend.onrender.com',
+        origin: process.env.FRONTEND_URL || ['http://localhost:8080', 'http://localhost:8081', 'http://localhost:8082', 'http://127.0.0.1:8080', 'https://ai-shopping-assistant-frontend.onrender.com'],
         methods: ['GET', 'POST']
     }
 });
 
 // Middleware
+// Security middleware
+app.use(helmet());
+
+// CORS
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'https://ai-shopping-assistant-frontend.onrender.com',
+    origin: process.env.FRONTEND_URL || ['http://localhost:8080', 'http://localhost:8081', 'http://localhost:8082', 'http://127.0.0.1:8080', 'https://ai-shopping-assistant-frontend.onrender.com'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     optionsSuccessStatus: 200
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+// Body parsing
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Handle preflight OPTIONS requests explicitly
 app.options('*', cors());
+
+// Rate limiting middleware
+app.use('/api/auth/login', loginLimiter);
+app.use('/api/auth/register', loginLimiter);
+app.use('/api/products/search', searchLimiter);
+app.use('/api/', apiLimiter);
 
 // Request logging
 app.use((req, res, next) => {
@@ -645,6 +662,12 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/products', productsRoutes);
 app.use('/api/assistant', assistantRoutes);
 app.use('/api/orders', ordersRoutes);
+app.use('/api/admin', adminRoutes);
+
+// Health check
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', uptime: process.uptime(), timestamp: Date.now() });
+});
 
 // Health check
 app.get('/health', (req, res) => {
@@ -773,7 +796,7 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3011;
 const SOCKET_PORT = process.env.SOCKET_PORT || 3001;
 
 server.listen(PORT, () => {

@@ -5,8 +5,8 @@ export default {
 
   state: {
     token: localStorage.getItem('token') || null,
-    user: null,
-    isAuthenticated: false
+    user: JSON.parse(localStorage.getItem('user')) || null,
+    isAuthenticated: !!localStorage.getItem('token')
   },
 
   mutations: {
@@ -15,6 +15,7 @@ export default {
       state.user = user
       state.isAuthenticated = true
       localStorage.setItem('token', token)
+      localStorage.setItem('user', JSON.stringify(user))
       
       // Set default authorization header
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`
@@ -25,6 +26,7 @@ export default {
       state.user = null
       state.isAuthenticated = false
       localStorage.removeItem('token')
+      localStorage.removeItem('user')
       localStorage.removeItem('userId')
       localStorage.removeItem('sessionId')
       
@@ -34,6 +36,7 @@ export default {
 
     UPDATE_USER(state, user) {
       state.user = user
+      localStorage.setItem('user', JSON.stringify(user))
     }
   },
 
@@ -58,7 +61,7 @@ export default {
       }
     },
 
-    async login({ commit }, { email, password }) {
+    async login({ commit, dispatch }, { email, password }) {
       try {
         const response = await api.post('/auth/login', {
           email,
@@ -70,13 +73,30 @@ export default {
           user: response.data.user
         })
 
+        // Initialize session for the newly logged-in user
+        try {
+          await dispatch('session/initializeSession', null, { root: true })
+          console.log('Session initialized after login')
+          
+          // Load cart after session is ready
+          await dispatch('cart/loadCart', null, { root: true })
+          console.log('Cart loaded after login')
+        } catch (error) {
+          console.warn('Post-login session/cart initialization failed:', error)
+        }
+
         return response.data
       } catch (error) {
         throw new Error(error.response?.data?.error || 'Login failed')
       }
     },
 
-    async logout({ commit }) {
+    async logout({ commit, dispatch }) {
+      // Clear session first
+      await dispatch('session/CLEAR_SESSION', null, { root: true })
+      // Clear cart
+      commit('cart/CLEAR_CART', null, { root: true })
+      // Then clear auth
       commit('CLEAR_AUTH')
     },
 

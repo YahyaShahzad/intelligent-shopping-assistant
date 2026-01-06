@@ -8,7 +8,10 @@
       </div>
       
       <nav class="nav">
-        <router-link to="/" class="nav-link">Home</router-link>
+        <router-link v-if="user && user.isAdmin" to="/admin" class="nav-link admin-link">
+          🔐 Admin Dashboard
+        </router-link>
+        <router-link v-else to="/" class="nav-link">Home</router-link>
         <router-link to="/products" class="nav-link">Products</router-link>
         <router-link to="/orders" class="nav-link">My Orders</router-link>
         <router-link to="/profile" class="nav-link">Profile</router-link>
@@ -16,7 +19,9 @@
 
       <div class="header-actions">
         <div class="user-info" v-if="user">
-          <span class="user-name">👤 {{ user.name }}</span>
+          <span class="user-name">
+            {{ user.isAdmin ? '👑 Admin User' : '👤 ' + user.name }}
+          </span>
           <span v-if="user.isStudent" class="student-badge">🎓 Student</span>
         </div>
 
@@ -116,7 +121,9 @@ export default {
   transform: translateX(-50%);
   width: 0;
   height: 2px;
- 
+  background: white;
+  transition: width 0.3s ease;
+}
 
 .nav-link.router-link-active {
   background: rgba(255, 255, 255, 0.2);
@@ -125,8 +132,6 @@ export default {
 
 .nav-link.router-link-active::after {
   width: 80%;
-} background: white;
-  transition: width 0.3s ease;
 }
 
 .nav-link:hover::after {
@@ -135,6 +140,23 @@ export default {
 
 .nav-link:hover {
   background: rgba(255, 255, 255, 0.1);
+}
+
+:root #app.theme-dark .header {
+  background: linear-gradient(135deg, #1d4ed8 0%, #4c1d95 50%, #831843 100%);
+  border-bottom-color: rgba(100, 116, 139, 0.3);
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.5), 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.admin-link {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  font-weight: 700;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.admin-link:hover {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
 }
 
 .header-actions {
@@ -286,5 +308,32 @@ export default {
     padding: 0.3rem 0.6rem;
     font-size: 0.85rem;
   }
+}
+
+/* Dark theme overrides for header */
+#app.theme-dark .logout-btn {
+  background: rgba(185, 28, 28, 0.2);
+  border-color: rgba(220, 38, 38, 0.4);
+}
+
+#app.theme-dark .logout-btn:hover {
+  background: rgba(220, 38, 38, 0.3);
+  box-shadow: 0 5px 15px rgba(220, 38, 38, 0.4);
+}
+
+#app.theme-dark .cart-button {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+#app.theme-dark .cart-button:hover {
+  background: rgba(59, 130, 246, 0.25);
+  box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+}
+
+#app.theme-dark .student-badge {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: rgba(99, 102, 241, 0.4);
+  color: #a5f3fc;
 }
 </style>

@@ -2,8 +2,14 @@
   <div class="orders-page">
     <div class="orders-container">
       <div class="page-header">
-        <h1>📦 My Orders</h1>
-        <router-link to="/products" class="shop-btn">Continue Shopping</router-link>
+        <div class="header-content">
+          <h1>📦 My Orders</h1>
+          <p class="subtitle">Track and manage your purchases</p>
+        </div>
+        <router-link to="/products" class="shop-btn">
+          <span class="btn-icon">🛍️</span>
+          Continue Shopping
+        </router-link>
       </div>
 
       <div v-if="loading" class="loading">
@@ -15,106 +21,214 @@
         <div class="empty-icon">🛒</div>
         <h2>No orders yet</h2>
         <p>Start shopping to see your orders here</p>
-        <router-link to="/products" class="shop-btn">Browse Products</router-link>
+        <router-link to="/products" class="shop-btn">
+          <span class="btn-icon">🛍️</span>
+          Browse Products
+        </router-link>
       </div>
 
-      <div v-else class="orders-list">
-        <div v-for="order in orders" :key="order.orderId" class="order-card">
-          <div class="order-header">
-            <div class="order-id">
-              <span class="label">Order ID:</span>
-              <span class="value">{{ order.orderId }}</span>
-            </div>
-            <div class="order-status" :class="'status-' + order.status">
-              {{ formatStatus(order.status) }}
-            </div>
-          </div>
-
-          <div class="order-date">
-            <span class="icon">📅</span>
-            {{ formatDate(order.createdAt) }}
-          </div>
-
-          <div class="order-items">
-            <div v-for="item in order.items" :key="item.productId" class="order-item">
-              <div class="item-info">
-                <h4>{{ item.name }}</h4>
-                <p class="item-meta">
-                  {{ item.category }} × {{ item.quantity }}
-                </p>
-              </div>
-              <div class="item-price">
-                ${{ (item.price * item.quantity).toFixed(2) }}
-              </div>
-            </div>
-          </div>
-
-          <div class="order-totals">
-            <div class="total-row">
-              <span>Subtotal:</span>
-              <span>${{ order.subtotal.toFixed(2) }}</span>
-            </div>
-            <div v-if="order.discount > 0" class="total-row discount">
-              <span>Discount:</span>
-              <span>-${{ order.discount.toFixed(2) }}</span>
-            </div>
-            <div class="total-row grand-total">
-              <span>Total:</span>
-              <span>${{ order.total.toFixed(2) }}</span>
-            </div>
-          </div>
-
-          <div class="order-delivery">
-            <div class="delivery-address">
-              <span class="icon">📍</span>
-              <div>
-                <strong>{{ order.billingInfo.name }}</strong>
-                <p>{{ order.billingInfo.address }}</p>
-                <p>{{ order.billingInfo.city }}, {{ order.billingInfo.postalCode }}</p>
-              </div>
-            </div>
-            <div class="delivery-contact">
-              <p><span class="icon">📧</span> {{ order.billingInfo.email }}</p>
-              <p><span class="icon">📱</span> {{ order.billingInfo.phone }}</p>
-            </div>
-          </div>
-
-          <div class="order-actions">
-            <button @click="viewOrderDetails(order)" class="view-details-btn">
-              View Details
-            </button>
-            <button v-if="canCancelOrder(order)" @click="cancelOrder(order.orderId)" class="cancel-order-btn">
-              Cancel Order
-            </button>
-            <button v-if="order.status === 'delivered'" class="reorder-btn">
-              Order Again
-            </button>
-          </div>
-
-          <div class="order-tracking">
-            <div class="tracking-steps">
-              <div class="step" :class="{ active: isStepActive(order, 'confirmed'), completed: isStepCompleted(order, 'confirmed') }">
-                <div class="step-icon">✓</div>
-                <div class="step-label">Confirmed</div>
-              </div>
-              <div class="step-line" :class="{ completed: isStepCompleted(order, 'processing') }"></div>
-              <div class="step" :class="{ active: isStepActive(order, 'processing'), completed: isStepCompleted(order, 'processing') }">
-                <div class="step-icon">📦</div>
-                <div class="step-label">Processing</div>
-              </div>
-              <div class="step-line" :class="{ completed: isStepCompleted(order, 'shipped') }"></div>
-              <div class="step" :class="{ active: isStepActive(order, 'shipped'), completed: isStepCompleted(order, 'shipped') }">
-                <div class="step-icon">🚚</div>
-                <div class="step-label">Shipped</div>
-              </div>
-              <div class="step-line" :class="{ completed: isStepCompleted(order, 'delivered') }"></div>
-              <div class="step" :class="{ active: isStepActive(order, 'delivered'), completed: isStepCompleted(order, 'delivered') }">
-                <div class="step-icon">✅</div>
-                <div class="step-label">Delivered</div>
-              </div>
-            </div>
-          </div>
+      <div v-else>
+        <!-- Orders Table -->
+        <div class="orders-table-container">
+          <table class="orders-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Date</th>
+                <th>Items</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr 
+                v-for="order in orders" 
+                :key="order.orderId" 
+                @click="selectOrder(order)"
+                :class="{ 'selected': selectedOrder && selectedOrder.orderId === order.orderId }"
+                class="order-row"
+              >
+                <td class="order-id-cell">
+                  <span class="order-id-badge">{{ order.orderId.slice(0, 8) }}</span>
+                </td>
+                <td class="date-cell">
+                  {{ formatDateShort(order.createdAt) }}
+                </td>
+                <td class="items-cell">
+                  <span class="items-count">{{ order.items.length }} item(s)</span>
+                </td>
+                <td class="total-cell">
+                  <strong>${{ order.total.toFixed(2) }}</strong>
+                </td>
+                <td class="status-cell">
+                  <span class="order-status" :class="'status-' + order.status">
+                    {{ formatStatus(order.status) }}
+                  </span>
+                </td>
+                <td class="actions-cell">
+                  <button 
+                    @click.stop="viewOrderDetails(order)" 
+                    class="view-btn"
+                    title="View Details"
+                  >
+                    👁️
+                  </button>
+                  <button 
+                    v-if="canCancelOrder(order)" 
+                    @click.stop="cancelOrder(order.orderId)" 
+                    class="cancel-btn"
+                    title="Cancel Order"
+                  >
+                    ✖️
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
+
+        <!-- Order Details Panel -->
+        <transition name="slide-up">
+          <div v-if="selectedOrder" class="order-details-panel">
+            <div class="panel-header">
+              <h2>Order Details</h2>
+              <button @click="selectedOrder = null" class="close-btn">✕</button>
+            </div>
+
+            <div class="panel-content">
+              <!-- Order Summary -->
+              <div class="details-section">
+                <h3>Order Summary</h3>
+                <div class="summary-grid">
+                  <div class="summary-item">
+                    <span class="label">Order ID</span>
+                    <span class="value">{{ selectedOrder.orderId }}</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="label">Date</span>
+                    <span class="value">{{ formatDate(selectedOrder.createdAt) }}</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="label">Status</span>
+                    <span class="order-status" :class="'status-' + selectedOrder.status">
+                      {{ formatStatus(selectedOrder.status) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Order Items -->
+              <div class="details-section">
+                <h3>Items ({{ selectedOrder.items.length }})</h3>
+                <div class="items-list">
+                  <div v-for="item in selectedOrder.items" :key="item.productId" class="item-row">
+                    <div class="item-details">
+                      <h4>{{ item.name }}</h4>
+                      <p class="item-category">{{ item.category }}</p>
+                    </div>
+                    <div class="item-quantity">
+                      <span>Qty: {{ item.quantity }}</span>
+                    </div>
+                    <div class="item-price">
+                      <span class="unit-price">${{ item.price.toFixed(2) }} each</span>
+                      <strong>${{ (item.price * item.quantity).toFixed(2) }}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Order Totals -->
+              <div class="details-section">
+                <h3>Payment Summary</h3>
+                <div class="totals-grid">
+                  <div class="total-item">
+                    <span>Subtotal</span>
+                    <span>${{ selectedOrder.subtotal.toFixed(2) }}</span>
+                  </div>
+                  <div v-if="selectedOrder.discount > 0" class="total-item discount-item">
+                    <span>Discount</span>
+                    <span>-${{ selectedOrder.discount.toFixed(2) }}</span>
+                  </div>
+                  <div class="total-item grand-total">
+                    <strong>Total</strong>
+                    <strong>${{ selectedOrder.total.toFixed(2) }}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Delivery Information -->
+              <div class="details-section">
+                <h3>Delivery Information</h3>
+                <div class="delivery-grid">
+                  <div class="delivery-info">
+                    <div class="info-label">📍 Address</div>
+                    <p class="info-value">
+                      <strong>{{ selectedOrder.billingInfo.name }}</strong><br>
+                      {{ selectedOrder.billingInfo.address }}<br>
+                      {{ selectedOrder.billingInfo.city }}, {{ selectedOrder.billingInfo.postalCode }}
+                    </p>
+                  </div>
+                  <div class="delivery-info">
+                    <div class="info-label">📞 Contact</div>
+                    <p class="info-value">
+                      📧 {{ selectedOrder.billingInfo.email }}<br>
+                      📱 {{ selectedOrder.billingInfo.phone }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Order Tracking -->
+              <div class="details-section">
+                <h3>Order Tracking</h3>
+                <div class="tracking-timeline">
+                  <div class="timeline-item" :class="{ active: isStepActive(selectedOrder, 'confirmed'), completed: isStepCompleted(selectedOrder, 'confirmed') }">
+                    <div class="timeline-icon">✓</div>
+                    <div class="timeline-content">
+                      <strong>Confirmed</strong>
+                      <p>Order has been confirmed</p>
+                    </div>
+                  </div>
+                  <div class="timeline-item" :class="{ active: isStepActive(selectedOrder, 'processing'), completed: isStepCompleted(selectedOrder, 'processing') }">
+                    <div class="timeline-icon">📦</div>
+                    <div class="timeline-content">
+                      <strong>Processing</strong>
+                      <p>Order is being prepared</p>
+                    </div>
+                  </div>
+                  <div class="timeline-item" :class="{ active: isStepActive(selectedOrder, 'shipped'), completed: isStepCompleted(selectedOrder, 'shipped') }">
+                    <div class="timeline-icon">🚚</div>
+                    <div class="timeline-content">
+                      <strong>Shipped</strong>
+                      <p>Order is on the way</p>
+                    </div>
+                  </div>
+                  <div class="timeline-item" :class="{ active: isStepActive(selectedOrder, 'delivered'), completed: isStepCompleted(selectedOrder, 'delivered') }">
+                    <div class="timeline-icon">✅</div>
+                    <div class="timeline-content">
+                      <strong>Delivered</strong>
+                      <p>Order has been delivered</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="details-actions">
+                <button v-if="canCancelOrder(selectedOrder)" @click="cancelOrder(selectedOrder.orderId)" class="cancel-order-btn">
+                  ✖️ Cancel Order
+                </button>
+                <button v-if="selectedOrder.status === 'delivered'" class="reorder-btn">
+                  🔄 Order Again
+                </button>
+                <button @click="downloadInvoice(selectedOrder)" class="invoice-btn">
+                  📄 Download Invoice
+                </button>
+              </div>
+            </div>
+          </div>
+        </transition>
       </div>
     </div>
   </div>
@@ -130,7 +244,8 @@ export default {
   data() {
     return {
       orders: [],
-      loading: false
+      loading: false,
+      selectedOrder: null
     }
   },
 
@@ -156,6 +271,10 @@ export default {
       }
     },
 
+    selectOrder(order) {
+      this.selectedOrder = order
+    },
+
     formatDate(dateString) {
       const date = new Date(dateString)
       return date.toLocaleDateString('en-US', {
@@ -164,6 +283,15 @@ export default {
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
+      })
+    },
+
+    formatDateShort(dateString) {
+      const date = new Date(dateString)
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
       })
     },
 
@@ -191,6 +319,7 @@ export default {
       try {
         await api.patch(`/orders/${orderId}/status`, { status: 'cancelled' })
         alert('Order cancelled successfully')
+        this.selectedOrder = null
         await this.loadOrders()
       } catch (error) {
         console.error('Error cancelling order:', error)
@@ -199,7 +328,11 @@ export default {
     },
 
     viewOrderDetails(order) {
-      this.$router.push(`/orders/${order.orderId}`)
+      this.selectedOrder = order
+    },
+
+    downloadInvoice(order) {
+      alert(`Downloading invoice for order ${order.orderId}`)
     },
 
     isStepActive(order, status) {
@@ -224,7 +357,7 @@ export default {
 }
 
 .orders-container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
@@ -232,20 +365,27 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
-.page-header h1 {
+.header-content h1 {
   font-size: 2.5rem;
   color: #f8fafc;
   font-weight: 800;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: #94a3b8;
+  font-size: 1.1rem;
+  margin: 0;
 }
 
 .shop-btn {
-  padding: 0.75rem 1.5rem;
+  padding: 0.875rem 1.75rem;
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   color: white;
   border: none;
@@ -255,12 +395,19 @@ export default {
   cursor: pointer;
   text-decoration: none;
   transition: all 0.3s ease;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
 }
 
 .shop-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 6px 25px rgba(99, 102, 241, 0.5);
+}
+
+.btn-icon {
+  font-size: 1.2rem;
 }
 
 .loading {
@@ -286,15 +433,17 @@ export default {
 .empty-state {
   text-align: center;
   padding: 4rem 2rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
 
 .empty-icon {
   font-size: 5rem;
   margin-bottom: 1rem;
+  opacity: 0.5;
 }
 
 .empty-state h2 {
@@ -306,269 +455,531 @@ export default {
 .empty-state p {
   color: #94a3b8;
   margin-bottom: 2rem;
+  font-size: 1.1rem;
 }
 
-.orders-list {
+.orders-table-container {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  margin-bottom: 2rem;
+}
+
+.orders-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.orders-table thead {
+  background: rgba(99, 102, 241, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.orders-table th {
+  padding: 1.25rem 1.5rem;
+  text-align: left;
+  font-weight: 700;
+  color: #f8fafc;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid rgba(99, 102, 241, 0.3);
+}
+
+.orders-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.orders-table tbody tr:hover {
+  background: rgba(99, 102, 241, 0.1);
+  transform: scale(1.01);
+}
+
+.orders-table tbody tr.selected {
+  background: rgba(99, 102, 241, 0.2);
+  border-left: 4px solid #6366f1;
+}
+
+.orders-table td {
+  padding: 1.25rem 1.5rem;
+  color: #e2e8f0;
+  font-size: 0.95rem;
+}
+
+.order-id-cell {
+  font-family: 'Courier New', monospace;
+}
+
+.order-id-badge {
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  background: rgba(99, 102, 241, 0.2);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 8px;
+  color: #a5b4fc;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.date-cell {
+  color: #94a3b8;
+}
+
+.items-count {
+  display: inline-block;
+  padding: 0.375rem 0.875rem;
+  background: rgba(139, 92, 246, 0.15);
+  border-radius: 20px;
+  color: #c4b5fd;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.total-cell strong {
+  color: #6ee7b7;
+  font-size: 1.1rem;
+}
+
+.order-status {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-pending { background: rgba(251, 191, 36, 0.2); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
+.status-confirmed { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+.status-processing { background: rgba(139, 92, 246, 0.2); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); }
+.status-shipped { background: rgba(99, 102, 241, 0.2); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); }
+.status-delivered { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+.status-cancelled { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+.actions-cell {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.view-btn,
+.cancel-btn {
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.view-btn:hover {
+  background: rgba(99, 102, 241, 0.3);
+  transform: scale(1.1);
+}
+
+.cancel-btn:hover {
+  background: rgba(239, 68, 68, 0.3);
+  transform: scale(1.1);
+}
+
+.order-details-panel {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-up-enter-from {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(-30px);
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid rgba(99, 102, 241, 0.3);
+}
+
+.panel-header h2 {
+  color: #f8fafc;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.close-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.5rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  background: rgba(239, 68, 68, 0.3);
+  transform: rotate(90deg);
+}
+
+.panel-content {
   display: flex;
   flex-direction: column;
   gap: 2rem;
 }
 
-.order-card {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  padding: 2rem;
-  transition: all 0.3s ease;
+.details-section {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.order-card:hover {
-  background: rgba(255, 255, 255, 0.08);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-}
-
-.order-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.order-id .label {
-  color: #94a3b8;
-  margin-right: 0.5rem;
-}
-
-.order-id .value {
+.details-section h3 {
   color: #f8fafc;
-  font-weight: 600;
-  font-family: monospace;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
 }
 
-.order-status {
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-transform: uppercase;
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
 }
 
-.status-pending { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
-.status-confirmed { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
-.status-processing { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; }
-.status-shipped { background: rgba(99, 102, 241, 0.2); color: #6366f1; }
-.status-delivered { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
-.status-cancelled { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
-
-.order-date {
-  color: #94a3b8;
-  margin-bottom: 1.5rem;
+.summary-item {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 0.5rem;
 }
 
-.order-items {
-  margin-bottom: 1.5rem;
+.summary-item .label {
+  color: #94a3b8;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.order-item {
+.summary-item .value {
+  color: #f8fafc;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.item-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
   background: rgba(255, 255, 255, 0.03);
-  border-radius: 12px;
-  margin-bottom: 0.5rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  gap: 1rem;
 }
 
-.order-item:last-child {
-  margin-bottom: 0;
-}
-
-.item-info h4 {
+.item-details h4 {
   color: #f8fafc;
+  font-size: 1rem;
   margin-bottom: 0.25rem;
+  font-weight: 600;
 }
 
-.item-meta {
+.item-category {
   color: #94a3b8;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.item-quantity {
+  color: #a78bfa;
+  font-weight: 600;
+  padding: 0.375rem 0.75rem;
+  background: rgba(139, 92, 246, 0.15);
+  border-radius: 8px;
 }
 
 .item-price {
-  color: #6366f1;
-  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.unit-price {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.item-price strong {
+  color: #6ee7b7;
   font-size: 1.1rem;
 }
 
-.order-totals {
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 12px;
-  margin-bottom: 1.5rem;
+.totals-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
-.total-row {
+.total-item {
   display: flex;
   justify-content: space-between;
-  padding: 0.5rem 0;
+  padding: 0.75rem;
   color: #e2e8f0;
+  font-size: 1rem;
 }
 
-.total-row.discount {
-  color: #22c55e;
+.discount-item {
+  color: #4ade80;
+  background: rgba(34, 197, 94, 0.1);
+  border-radius: 8px;
 }
 
-.total-row.grand-total {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  margin-top: 0.5rem;
+.grand-total {
+  border-top: 2px solid rgba(99, 102, 241, 0.3);
   padding-top: 1rem;
-  font-size: 1.2rem;
-  font-weight: 700;
+  margin-top: 0.5rem;
+  font-size: 1.25rem;
   color: #f8fafc;
 }
 
-.order-delivery {
+.delivery-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1.5rem;
+}
+
+.delivery-info {
   padding: 1rem;
   background: rgba(255, 255, 255, 0.03);
-  border-radius: 12px;
-  margin-bottom: 1.5rem;
+  border-radius: 10px;
 }
 
-.delivery-address,
-.delivery-contact {
+.info-label {
+  color: #a78bfa;
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+}
+
+.info-value {
   color: #e2e8f0;
+  line-height: 1.6;
+  margin: 0;
 }
 
-.delivery-address strong,
-.delivery-contact p {
+.info-value strong {
+  color: #f8fafc;
   display: block;
   margin-bottom: 0.25rem;
 }
 
-.icon {
-  margin-right: 0.5rem;
-}
-
-.order-tracking {
-  margin: 2rem 0 1.5rem;
-  padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 12px;
-}
-
-.tracking-steps {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.step {
+.tracking-timeline {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  gap: 0;
   position: relative;
-  z-index: 1;
+  padding-left: 2rem;
 }
 
-.step-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
+.timeline-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem 0;
+  position: relative;
+  opacity: 0.5;
+  transition: all 0.3s ease;
+}
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -1.5rem;
+  top: 2.5rem;
+  width: 2px;
+  height: 100%;
   background: rgba(255, 255, 255, 0.1);
+}
+
+.timeline-item:last-child::before {
+  display: none;
+}
+
+.timeline-item.active,
+.timeline-item.completed {
+  opacity: 1;
+}
+
+.timeline-item.completed::before {
+  background: #22c55e;
+}
+
+.timeline-icon {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
   border: 2px solid rgba(255, 255, 255, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  position: relative;
+  left: -2rem;
   transition: all 0.3s ease;
 }
 
-.step.active .step-icon {
+.timeline-item.active .timeline-icon {
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   border-color: #6366f1;
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.6);
+  animation: pulse 2s infinite;
 }
 
-.step.completed .step-icon {
+.timeline-item.completed .timeline-icon {
   background: #22c55e;
   border-color: #22c55e;
 }
 
-.step-label {
-  color: #94a3b8;
-  font-size: 0.85rem;
-  font-weight: 500;
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(99, 102, 241, 0.8);
+  }
 }
 
-.step.active .step-label {
+.timeline-content strong {
+  display: block;
   color: #f8fafc;
-  font-weight: 600;
+  font-size: 1.05rem;
+  margin-bottom: 0.25rem;
 }
 
-.step-line {
-  flex: 1;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.1);
-  margin: 0 -1rem 1.5rem;
+.timeline-content p {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  margin: 0;
 }
 
-.step-line.completed {
-  background: #22c55e;
-}
-
-.order-actions {
+.details-actions {
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.order-actions button {
-  padding: 0.75rem 1.5rem;
+.details-actions button {
+  flex: 1;
+  min-width: 200px;
+  padding: 1rem 1.5rem;
   border: none;
   border-radius: 12px;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.3s ease;
-}
-
-.view-details-btn {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  color: white;
-}
-
-.view-details-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(99, 102, 241, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .cancel-order-btn {
-  background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .cancel-order-btn:hover {
-  background: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3);
 }
 
 .reorder-btn {
-  background: rgba(34, 197, 94, 0.2);
-  color: #22c55e;
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
   border: 1px solid rgba(34, 197, 94, 0.3);
 }
 
 .reorder-btn:hover {
-  background: rgba(34, 197, 94, 0.3);
+  background: rgba(34, 197, 94, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(34, 197, 94, 0.3);
+}
+
+.invoice-btn {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+}
+
+.invoice-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(99, 102, 241, 0.5);
+}
+
+@media (max-width: 1024px) {
+  .orders-table {
+    font-size: 0.875rem;
+  }
+
+  .orders-table th,
+  .orders-table td {
+    padding: 1rem;
+  }
 }
 
 @media (max-width: 768px) {
@@ -576,28 +987,47 @@ export default {
     padding: 1rem;
   }
 
-  .page-header h1 {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .header-content h1 {
     font-size: 2rem;
   }
 
-  .order-delivery {
+  .orders-table-container {
+    overflow-x: auto;
+  }
+
+  .orders-table {
+    min-width: 800px;
+  }
+
+  .order-details-panel {
+    padding: 1.5rem;
+  }
+
+  .summary-grid,
+  .delivery-grid {
     grid-template-columns: 1fr;
   }
 
-  .tracking-steps {
-    flex-wrap: wrap;
-  }
-
-  .step-line {
-    display: none;
-  }
-
-  .order-actions {
+  .details-actions {
     flex-direction: column;
   }
 
-  .order-actions button {
-    width: 100%;
+  .details-actions button {
+    min-width: 100%;
+  }
+
+  .item-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .item-price {
+    align-items: flex-start;
   }
 }
 </style>

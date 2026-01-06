@@ -8,17 +8,20 @@ services:
     buildCommand: npm install
     startCommand: node server.js
     rootDir: backend
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 10000
+        sync: false  # Render supplies PORT; leave empty or set if needed
       - key: MONGODB_URI
-        sync: false  # Set this in Render dashboard
+         value: mongodb+srv://yahyashahzadanees_db_user:ZIOYBQrolvly7r5Z@shoppingassistant.adspbes.mongodb.net/shopping_assistant?retryWrites=true&w=majority&appName=shoppingassistant
       - key: JWT_SECRET
         generateValue: true
       - key: FRONTEND_URL
         sync: false  # Set after frontend deployment
+      - key: SOCKET_PORT
+        sync: false  # Optional; default follows PORT
 
   # Frontend Static Site
   - type: web
@@ -31,4 +34,6 @@ services:
     rootDir: frontend
     envVars:
       - key: VUE_APP_API_URL
+        value: https://shopping-assistant-backend.onrender.com/api
+      - key: VUE_APP_SOCKET_URL
         value: https://shopping-assistant-backend.onrender.com

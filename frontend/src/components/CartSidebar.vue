@@ -480,4 +480,136 @@ export default {
   transform: translateY(-3px);
   box-shadow: 0 8px 30px rgba(99, 102, 241, 0.5);
 }
+
+/* Dark theme overrides for cart */
+#app.theme-dark .cart-sidebar {
+  background: #111827;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.5);
+}
+
+#app.theme-dark .cart-header {
+  background: #0b1220;
+  border-bottom-color: #1f2937;
+  color: #e5e7eb;
+}
+
+#app.theme-dark .cart-header h2 {
+  color: #f3f4f6;
+}
+
+#app.theme-dark .close-btn {
+  color: #9ca3af;
+}
+
+#app.theme-dark .close-btn:hover {
+  color: #f3f4f6;
+  background: #1f2937;
+}
+
+#app.theme-dark .cart-item {
+  background: #1f2937;
+  border-color: #111827;
+}
+
+#app.theme-dark .cart-item:hover {
+  background: #374151;
+  border-color: #3b82f6;
+}
+
+#app.theme-dark .item-info h3 {
+  color: #f3f4f6;
+}
+
+#app.theme-dark .item-category {
+  color: #9ca3af;
+}
+
+#app.theme-dark .current-price {
+  color: #86efac;
+}
+
+#app.theme-dark .original-price {
+  color: #6b7280;
+}
+
+#app.theme-dark .item-total {
+  color: #e5f3ff;
+}
+
+#app.theme-dark .quantity-controls button {
+  background: #111827;
+  color: #e5e7eb;
+  border-color: #374151;
+}
+
+#app.theme-dark .quantity-controls button:hover {
+  background: #374151;
+  border-color: #4b5563;
+}
+
+#app.theme-dark .remove-btn {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+#app.theme-dark .remove-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+#app.theme-dark .cart-summary {
+  background: #0b1220;
+  border-top-color: #1f2937;
+}
+
+#app.theme-dark .summary-row {
+  color: #e5e7eb;
+  border-color: #1f2937;
+}
+
+#app.theme-dark .summary-row span:last-child {
+  color: #f0fdf4;
+}
+
+#app.theme-dark .summary-row.total {
+  color: #e5f3ff;
+}
+
+#app.theme-dark .discount-label {
+  color: #a7f3d0;
+}
+
+#app.theme-dark .applied-discounts li {
+  color: #e5e7eb;
+}
+
+#app.theme-dark .applied-discounts li::before {
+  color: #10b981;
+}
+
+#app.theme-dark .checkout-btn {
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 50%, #c026d3 100%);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
+}
+
+#app.theme-dark .checkout-btn:hover {
+  box-shadow: 0 8px 30px rgba(37, 99, 235, 0.5);
+}
+
+#app.theme-dark .empty-cart {
+  background: #111827;
+  color: #e5e7eb;
+}
+
+#app.theme-dark .empty-cart p:nth-child(2) {
+  color: #9ca3af;
+}
+
+#app.theme-dark .empty-cart button {
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  box-shadow: 0 5px 20px rgba(37, 99, 235, 0.3);
+}
+
+#app.theme-dark .empty-cart button:hover {
+  box-shadow: 0 8px 30px rgba(37, 99, 235, 0.5);
+}
 </style>

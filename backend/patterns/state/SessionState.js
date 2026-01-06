@@ -383,9 +383,14 @@ class CheckoutState extends SessionState {
         try {
             const order = new Order({
                 orderId: orderId,
-                userId: this.session.userId,
+                user: this.session.userId, // ObjectId reference
+                userId: this.session.userId, // String for backward compatibility
                 sessionId: this.session.sessionId,
-                items: cartData.items,
+                items: cartData.items.map(item => ({
+                    ...item,
+                    product: item.productId, // Add product reference
+                    productId: item.productId
+                })),
                 billingInfo: {
                     name: billingInfo.name,
                     email: billingInfo.email,
@@ -609,6 +614,10 @@ class SessionManager {
 
     getActiveSessions() {
         return Array.from(this.sessions.values()).filter(s => s.isActive());
+    }
+
+    getAllSessions() {
+        return Array.from(this.sessions.values());
     }
 
     getSessionStats() {

@@ -22,7 +22,10 @@ export default {
 
   actions: {
     connectWebSocket({ commit, rootState, dispatch }) {
-      const socketURL = process.env.VUE_APP_SOCKET_URL || 'http://localhost:3000'
+      const socketURL = process.env.VUE_APP_SOCKET_URL ||
+        (typeof window !== 'undefined'
+          ? `${window.location.protocol}//${window.location.hostname}:3000`
+          : 'http://localhost:3000')
       
       socket = io(socketURL, {
         transports: ['websocket', 'polling'],

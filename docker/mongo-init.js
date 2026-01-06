@@ -1,5 +1,18 @@
 // MongoDB initialization script
-db = db.getSiblingDB('shopping_assistant');
+// Create application user with readWrite role on shopping_assistant
+var appDb = db.getSiblingDB('shopping_assistant');
+var existingUser = null;
+try { existingUser = appDb.getUser('shop_user'); } catch (e) {}
+if (!existingUser) {
+    appDb.createUser({
+        user: 'shop_user',
+        pwd: 'shop_password123!',
+        roles: [{ role: 'readWrite', db: 'shopping_assistant' }]
+    });
+}
+
+// Ensure we are using the application database for schema/seed
+db = appDb;
 
 // Create collections
 db.createCollection('users');

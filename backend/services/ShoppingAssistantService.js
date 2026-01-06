@@ -123,6 +123,11 @@ class ShoppingAssistantService {
         return session.getSessionInfo();
     }
 
+    // Get all sessions (for finding user's active session)
+    getAllSessions() {
+        return this.sessionManager.getAllSessions().map(s => s.getSessionInfo());
+    }
+
     // Add item to cart
     async addToCart(sessionId, productData) {
         const session = this.sessionManager.getSession(sessionId);
@@ -250,17 +255,68 @@ class ShoppingAssistantService {
         return result;
     }
 
-    // Get recommendations for user
+    // Get recommendations for user based on order history
     async getRecommendations(userId) {
+        const Order = require('../models/Order');
+        const Product = require('../models/Product');
+        
         // Fetch fresh user data from database to get latest purchase history
         const dbUser = await User.findById(userId);
         if (!dbUser) {
             throw new Error('User not found');
         }
 
+        // Get user's order history
+        const orders = await Order.find({ 
+            userId: userId,
+            status: { $in: ['delivered', 'processing', 'shipped'] }
+        }).sort({ createdAt: -1 }).limit(10).lean();
+
+        // Extract categories and product IDs from order history
+        const purchasedCategories = [];
+        const purchasedProductIds = [];
+        
+        orders.forEach(order => {
+            order.items.forEach(item => {
+                if (item.category) purchasedCategories.push(item.category);
+                if (item.productId) purchasedProductIds.push(item.productId.toString());
+            });
+        });
+
+        // Get unique categories
+        const uniqueCategories = [...new Set(purchasedCategories)];
+        
+        // Find related products from same categories that user hasn't bought
+        let recommendations = [];
+        
+        if (uniqueCategories.length > 0) {
+            recommendations = await Product.find({
+                category: { $in: uniqueCategories },
+                _id: { $nin: purchasedProductIds.map(id => require('mongoose').Types.ObjectId(id)) },
+                stock: { $gt: 0 }
+            })
+            .sort({ 'ratings.average': -1, 'ratings.count': -1 })
+            .limit(8)
+            .lean();
+        }
+
+        // If not enough recommendations, add trending products
+        if (recommendations.length < 6) {
+            const trendingProducts = await Product.find({
+                _id: { $nin: purchasedProductIds.map(id => require('mongoose').Types.ObjectId(id)) },
+                stock: { $gt: 0 }
+            })
+            .sort({ 'ratings.average': -1, 'ratings.count': -1 })
+            .limit(6 - recommendations.length)
+            .lean();
+            
+            recommendations = [...recommendations, ...trendingProducts];
+        }
+
         // Update blackboard with fresh user data including purchase history
         const userData = dbUser.toJSON();
         userData.id = userId;
+        userData.orderHistory = orders;
         this.blackboard.setUser(userId, userData);
 
         const context = { 
@@ -269,7 +325,15 @@ class ShoppingAssistantService {
         };
         this.personalizationKS.execute(context);
 
-        return this.blackboard.getRecommendations(userId);
+        // Merge AI recommendations with order-based recommendations
+        const aiRecommendations = this.blackboard.getRecommendations(userId);
+        
+        return {
+            items: recommendations,
+            aiSuggestions: aiRecommendations,
+            basedOnOrders: orders.length > 0,
+            orderCount: orders.length
+        };
     }
 
     // Get available coupons for user
