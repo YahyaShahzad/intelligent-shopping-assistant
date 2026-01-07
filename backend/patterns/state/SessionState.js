@@ -412,6 +412,28 @@ class CheckoutState extends SessionState {
             await order.save();
             console.log(`Order ${orderId} saved to database`);
             
+            // Update product stock for each item in the order
+            try {
+                for (const item of cartData.items) {
+                    const product = await Product.findById(item.productId);
+                    if (product) {
+                        // Decrease stock by quantity ordered
+                        product.stock -= item.quantity;
+                        
+                        // Ensure stock doesn't go below 0
+                        if (product.stock < 0) {
+                            product.stock = 0;
+                        }
+                        
+                        await product.save();
+                        console.log(`Product ${product.name} stock updated: -${item.quantity}, remaining stock: ${product.stock}`);
+                    }
+                }
+            } catch (stockError) {
+                console.error('Error updating product stock:', stockError);
+                // Continue even if stock update fails
+            }
+            
             // FIX: Update user purchase history for personalized recommendations
             // Changed from findOne({userId}) to findById since User model uses _id
             if (this.session.userId) {
